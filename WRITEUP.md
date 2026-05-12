@@ -446,7 +446,47 @@ per trajectory.
 
 ---
 
-## Appendix A — what's in the repo
+## Appendix A — forensic addendum (`results/forensics.md`)
+
+After the writeup above was first drafted, the per-task trajectories
+in `results/{v0,v2}_results.json` were mined directly (they are
+themselves the execution log; no separate structured logger was
+wired in for the work-trial timeframe). Six load-bearing findings
+came out:
+
+1. τ-bench's reward decomposes into **`r_actions`** (DB-state match)
+   vs **`r_outputs`** (final-text match). Tasks judged on
+   `r_outputs` **never pass** with gpt-4o-mini in this dataset.
+2. `reward_info=None` ≡ agent hit `max_steps=25`. v2 lost **4
+   tasks** to step exhaustion, v0 lost **1**. Direct evidence for
+   the §3.1 "v2 ran out of budget" claim.
+3. The **real failure mode is arithmetic, not interaction**. Tool-
+   side errors are dominated by payment-split mismatches, gift-card
+   balance shortfalls, and invalid certificate use. Our taxonomy
+   has no `tool_argument_correctness` dimension.
+4. **The `confirmation_discipline` LLM judge is strictly worse than
+   a 10-line Python heuristic.** Heuristic says v2 confirms 69%
+   of mutations vs v0's 49%; LLM judge says 0% on both. The v2
+   preamble worked on this dimension — we were blind to it.
+5. Semantic judges anchor on the user's request, not the agent's
+   actions. Task-15 paired comparison: v0 correctly refused, our
+   `scope_adherence` judge marked it FAIL citing the forbidden
+   behavior the agent **refused to do**.
+6. The v2 preamble made the agent **more action-oriented, not more
+   cautious**: 67% more total mutations, 33% as many transfers-to-
+   human. Behavioral instructions are not safety primitives.
+
+Full analysis in `results/forensics.md`. The three highest-leverage
+upgrades suggested there:
+
+- Move `confirmation_discipline` from semantic to deterministic.
+- Add a deterministic `tool_argument_correctness` check
+  (payment-arithmetic re-derivation).
+- Restrict action-oriented judges (`scope_adherence`,
+  `policy_compliance`) to receive **only** the agent's tool calls
+  + final assistant messages, not the user's requests.
+
+## Appendix B — what's in the repo
 
 See `README.md` § Repo layout for the file tree. Notably:
 
