@@ -77,6 +77,34 @@ def test_run_task_returns_expected_keys_and_types(monkeypatch):
     assert "reward_info" in out["info"]
 
 
+def test_run_task_wiki_override_replaces_agent_system_prompt(monkeypatch):
+    """v2 variant passes wiki_override; runner must hand it to the agent
+    constructor and NOT to the env. We capture both to prove it."""
+    import tau_bench.agents.tool_calling_agent as tc_mod
+    import tau_bench.envs.airline.env as env_mod
+
+    captured: dict[str, Any] = {}
+
+    class _CapturingAgent(_FakeAgent):
+        def __init__(self, **kwargs: Any) -> None:
+            captured["agent_wiki"] = kwargs.get("wiki")
+            super().__init__(**kwargs)
+
+    class _CapturingEnv(_FakeEnv):
+        def __init__(self, **kwargs: Any) -> None:
+            captured["env_kwargs"] = kwargs
+            super().__init__(**kwargs)
+
+    monkeypatch.setattr(env_mod, "MockAirlineDomainEnv", _CapturingEnv)
+    monkeypatch.setattr(tc_mod, "ToolCallingAgent", _CapturingAgent)
+
+    override = "OVERRIDDEN PROMPT TEXT"
+    runner.run_task(task_index=3, wiki_override=override)
+    assert captured["agent_wiki"] == override
+    # env was NOT given the override (would distort the user-sim/reward path)
+    assert "wiki" not in captured["env_kwargs"]
+
+
 def test_airline_tool_catalog_returns_fourteen_named_tools():
     cat = runner.airline_tool_catalog()
     assert isinstance(cat, list)

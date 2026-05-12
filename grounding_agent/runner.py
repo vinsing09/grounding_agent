@@ -22,8 +22,14 @@ def run_task(
     user_model: str = "gpt-4o-mini",
     user_provider: str = "openai",
     max_steps: int = 30,
+    wiki_override: str | None = None,
 ) -> dict[str, Any]:
     """Run the tau-bench tool-calling agent on one airline task.
+
+    `wiki_override` replaces the system prompt the agent sees without
+    touching the env (so the user-sim, reward function, and ground-truth
+    actions stay exactly as tau-bench defines them). Used by run_eval
+    to swap in the v2 prompt variant.
 
     Returns:
         {
@@ -44,9 +50,10 @@ def run_task(
         user_provider=user_provider,
         task_index=task_index,
     )
+    agent_wiki = wiki_override if wiki_override is not None else env.wiki
     agent = ToolCallingAgent(
         tools_info=env.tools_info,
-        wiki=env.wiki,
+        wiki=agent_wiki,
         model=agent_model,
         provider=agent_provider,
     )
