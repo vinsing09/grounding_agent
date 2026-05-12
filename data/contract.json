@@ -3,94 +3,89 @@
   "obligations": [
     {
       "id": "obl-obtain-user-id",
-      "text": "Obtain the user id before booking a flight.",
+      "text": "obtain the user id before booking a flight",
       "category": "policy_compliance"
     },
     {
       "id": "obl-obtain-trip-details",
-      "text": "Ask for the trip type, origin, and destination before booking a flight.",
+      "text": "ask for the trip type, origin, and destination before booking a flight",
       "category": "policy_compliance"
     },
     {
-      "id": "obl-confirm-action",
-      "text": "List the action details and obtain explicit user confirmation to proceed before updating the booking database.",
+      "id": "obl-obtain-confirmation",
+      "text": "list the action details and obtain explicit user confirmation before updating the booking database",
       "category": "confirmation_discipline"
     },
     {
-      "id": "obl-ask-travel-insurance",
-      "text": "Ask if the user wants to buy travel insurance when booking a flight.",
+      "id": "obl-deny-requests",
+      "text": "deny user requests that are against the policy",
       "category": "policy_compliance"
     },
     {
-      "id": "obl-obtain-reservation-id",
-      "text": "Obtain the reservation id before modifying a flight.",
+      "id": "obl-obtain-reservation-details",
+      "text": "obtain the user id and reservation id before modifying a flight",
       "category": "policy_compliance"
     },
     {
       "id": "obl-obtain-cancellation-details",
-      "text": "Obtain the user id, reservation id, and reason for cancellation before cancelling a flight.",
+      "text": "obtain the user id, reservation id, and reason for cancellation before cancelling a flight",
       "category": "policy_compliance"
     },
     {
-      "id": "obl-ensure-cancellation-conditions",
-      "text": "Ensure the cancellation conditions are met before proceeding with a cancellation.",
+      "id": "obl-validate-flight-modification",
+      "text": "ensure that basic economy flights cannot be modified before calling the API",
+      "category": "tool_argument_correctness"
+    },
+    {
+      "id": "obl-validate-cancellation-conditions",
+      "text": "ensure that cancellation conditions are met before calling the API",
+      "category": "tool_argument_correctness"
+    },
+    {
+      "id": "obl-ask-for-insurance",
+      "text": "ask if the user wants to buy travel insurance",
       "category": "policy_compliance"
     },
     {
-      "id": "obl-ensure-modification-conditions",
-      "text": "Ensure the modification conditions are met before proceeding with a flight modification.",
-      "category": "policy_compliance"
-    },
-    {
-      "id": "obl-ask-payment-method",
-      "text": "Ask for the payment or refund method if the flights are changed.",
-      "category": "policy_compliance"
-    },
-    {
-      "id": "obl-deny-requests-against-policy",
-      "text": "Deny user requests that are against this policy.",
-      "category": "policy_compliance"
-    },
-    {
-      "id": "obl-transfer-to-human",
-      "text": "Transfer the user to a human agent if the request cannot be handled within the scope of actions.",
-      "category": "policy_compliance"
+      "id": "obl-validate-payment-methods",
+      "text": "ensure that payment methods are already in user profile for safety reasons",
+      "category": "tool_argument_correctness"
     }
   ],
   "forbidden_behaviors": [
     {
       "id": "fb-provide-unverified-info",
-      "text": "Do not provide any information, knowledge, or procedures not provided by the user or available tools.",
+      "text": "do not provide any information, knowledge, or procedures not provided by the user or available tools",
       "category": "information_grounding"
     },
     {
       "id": "fb-simultaneous-tool-call",
-      "text": "Do not make a tool call and respond to the user simultaneously.",
-      "category": "tool_sequence_correctness"
+      "text": "do not respond to the user while making a tool call",
+      "category": "scope_adherence"
     },
     {
       "id": "fb-modify-basic-economy",
-      "text": "Do not modify basic economy flights.",
-      "category": "scope_adherence"
+      "text": "do not modify basic economy flights",
+      "category": "policy_compliance"
     },
     {
-      "id": "fb-modify-passenger-count",
-      "text": "Do not modify the number of passengers in a reservation.",
-      "category": "scope_adherence"
+      "id": "fb-cancel-flights-not-eligible",
+      "text": "do not cancel flights if the conditions are not met",
+      "category": "policy_compliance"
     },
     {
       "id": "fb-add-insurance-after-booking",
-      "text": "Do not add insurance after the initial booking.",
-      "category": "scope_adherence"
+      "text": "do not add insurance after initial booking",
+      "category": "policy_compliance"
     },
     {
-      "id": "fb-cancel-flights-after-use",
-      "text": "Do not cancel a trip if any of the segments have already been used.",
-      "category": "scope_adherence"
+      "id": "fb-modify-passenger-count",
+      "text": "do not modify the number of passengers",
+      "category": "policy_compliance"
     },
     {
-      "id": "fb-proactive-compensation",
-      "text": "Do not proactively offer compensation unless the user complains and explicitly asks for it.",
+      "id": "fb-proactively-offer-compensation",
+      "text": "do not proactively offer compensation unless the user complains",
       "category": "policy_compliance"
     }
   ],
@@ -104,7 +99,7 @@
       "category": "tool_sequence_correctness"
     },
     {
-      "id": "ts-update-reservation-flights",
+      "id": "ts-update-reservation_flights",
       "target_tool": "update_reservation_flights",
       "prerequisite_tools": [
         "get_user_details",
@@ -113,7 +108,7 @@
       "category": "tool_sequence_correctness"
     },
     {
-      "id": "ts-cancel-reservation",
+      "id": "ts-cancel_reservation",
       "target_tool": "cancel_reservation",
       "prerequisite_tools": [
         "get_user_details",

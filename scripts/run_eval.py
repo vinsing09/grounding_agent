@@ -119,6 +119,29 @@ def _run_one(
     }
 
 
+def _rejudge_one(
+    cached_rec: dict[str, Any],
+    *,
+    contract: dict[str, Any],
+    judge_model: str,
+    eventlog: EventLog | None = None,
+) -> dict[str, Any]:
+    """Reuse a cached record's `messages` + `info` + `termination` +
+    `tool_errors`; recompute only the judge verdicts under a new
+    contract. Used by --judge-only."""
+    if "messages" not in cached_rec or "error" in cached_rec:
+        return cached_rec
+    results = evaluate_trajectory(
+        cached_rec["messages"], contract, model=judge_model,
+        eventlog=eventlog, task_index=cached_rec.get("task_index"),
+    )
+    eval_serial = {cat: _serialize_result(r) for cat, r in results.items()}
+    out = dict(cached_rec)
+    out["evaluation"] = eval_serial
+    out["summary"] = summarize(results)
+    return out
+
+
 def run_variant(
     variant: str,
     task_indices: list[int],
@@ -130,6 +153,7 @@ def run_variant(
     force: bool,
     contract: dict[str, Any],
     eventlog: EventLog | None = None,
+    judge_only: bool = False,
 ) -> dict[str, Any]:
     spec = VARIANTS[variant]
     path = RESULTS_DIR / f"{variant}_results.json"
@@ -162,21 +186,36 @@ def run_variant(
     n_err = 0
     for ti in task_indices:
         key = str(ti)
-        if key in data["tasks"] and not force:
+        cached = data["tasks"].get(key)
+
+        if cached and not force and not judge_only:
             print(f"  [{variant}] task {ti}: cached, skipping")
             continue
+
         t0 = time.time()
         try:
-            record = _run_one(
-                ti,
-                wiki=wiki,
-                agent_model=agent_model,
-                user_model=user_model,
-                max_steps=max_steps,
-                contract=contract,
-                judge_model=judge_model,
-                eventlog=eventlog,
-            )
+            if judge_only:
+                if not cached:
+                    print(f"  [{variant}] task {ti}: no cached record; --judge-only skips")
+                    continue
+                if "error" in cached:
+                    print(f"  [{variant}] task {ti}: cached as error; --judge-only skips")
+                    continue
+                record = _rejudge_one(
+                    cached, contract=contract,
+                    judge_model=judge_model, eventlog=eventlog,
+                )
+            else:
+                record = _run_one(
+                    ti,
+                    wiki=wiki,
+                    agent_model=agent_model,
+                    user_model=user_model,
+                    max_steps=max_steps,
+                    contract=contract,
+                    judge_model=judge_model,
+                    eventlog=eventlog,
+                )
         except Exception as e:  # surface error, keep moving
             traceback.print_exc()
             record = {"task_index": ti, "error": f"{type(e).__name__}: {e}"}
@@ -224,6 +263,15 @@ def main() -> None:
         "--run-id", default=None,
         help="event-log subdirectory under results/logs/. Default: auto.",
     )
+    parser.add_argument(
+        "--judge-only", action="store_true",
+        help=(
+            "Skip agent rollouts; reuse cached messages from "
+            "results/{variant}_results.json and re-run only the judges "
+            "against the current contract. Useful after regenerating "
+            "the contract."
+        ),
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -270,6 +318,7 @@ def main() -> None:
                 force=args.force,
                 contract=contract,
                 eventlog=elog,
+                judge_only=args.judge_only,
             )
             elog.emit("run_end")
 

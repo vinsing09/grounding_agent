@@ -160,12 +160,10 @@ def generate_contract(
         '{\n'
         '  "agent": "<agent_name>",\n'
         '  "obligations": [\n'
-        '    {"id": "obl-<slug>", "text": "<imperative>", "category": "<one of: '
-        + ", ".join(known)
-        + '>"}\n'
+        '    {"id": "obl-<slug>", "text": "<imperative>", "category": "<one of the categories below>"}\n'
         '  ],\n'
         '  "forbidden_behaviors": [\n'
-        '    {"id": "fb-<slug>", "text": "<prohibition>", "category": "<one of the categories above>"}\n'
+        '    {"id": "fb-<slug>", "text": "<prohibition>", "category": "<one of the categories below>"}\n'
         '  ],\n'
         '  "tool_sequences": [\n'
         '    {"id": "ts-<slug>", "target_tool": "<one of the tool names listed below>", '
@@ -173,23 +171,74 @@ def generate_contract(
         '  ]\n'
         '}'
     )
+    # Worked example per category — disambiguates the recurring
+    # mistagging where business-rule prohibitions ("can't modify basic
+    # economy") were placed in scope_adherence rather than
+    # policy_compliance (forensics_v2.md Finding 8).
+    category_defs = (
+        "CATEGORY DEFINITIONS (apply rigorously):\n\n"
+        "1. **policy_compliance** — Business rules the agent must "
+        "enforce: eligibility, quantity limits, conditional gates. "
+        "Examples: 'basic economy flights cannot be modified', "
+        "'cancel within 24h of booking only', 'compensate $100 only "
+        "for silver/gold members'. ANY rule whose action is 'apply the "
+        "rule when X / refuse when Y' belongs here — even if it sounds "
+        "like a prohibition. Most business prohibitions are this.\n\n"
+        "2. **confirmation_discipline** — Specifically about getting an "
+        "explicit user 'yes' before a state-mutating tool call. "
+        "Example: 'list the action and obtain explicit confirmation "
+        "before booking'.\n\n"
+        "3. **information_grounding** — Don't invent facts not in tool "
+        "outputs or user messages. Example: 'no procedures or knowledge "
+        "not provided by user or tools', 'no subjective recommendations'.\n\n"
+        "4. **scope_adherence** — ONLY about the transfer-to-human "
+        "decision: when to transfer, when NOT to transfer. Example: "
+        "'transfer iff the request cannot be handled within scope'. "
+        "Do NOT tag business rules here just because they describe "
+        "what the agent cannot do. A 'can't modify basic economy' rule "
+        "is policy_compliance — the agent denies the request per the "
+        "rule; it does not (and should not) transfer.\n\n"
+        "5. **tool_sequence_correctness** — Tool ORDERING rules (call "
+        "prerequisite reads before mutating tools). Tag every "
+        "tool_sequences clause here.\n\n"
+        "6. **tool_argument_correctness** — Argument VALIDITY rules "
+        "(check eligibility/availability/balance before calling). "
+        "Examples: 'the API does not check these; the agent must make "
+        "sure rules apply before calling'. Use sparingly; most rules "
+        "are about WHAT to do (policy_compliance), not VALIDATION of "
+        "tool arguments per se.\n\n"
+        "7. **task_completion** — End-to-end goal achievement; "
+        "typically NOT cited in obligations because completion is "
+        "implicit. Skip unless the policy has an explicit 'finish the "
+        "task' clause.\n\n"
+        "DECISION HEURISTIC:\n"
+        "- 'Don't do X' where X is a business action → policy_compliance.\n"
+        "- 'Don't do X' where X is to transfer/escalate → scope_adherence.\n"
+        "- 'Don't say X' where X is unverified → information_grounding.\n"
+        "- 'Don't call tool X without read Y' → tool_sequence_correctness.\n"
+        "- 'Must validate args before calling X' → tool_argument_correctness.\n"
+        "- 'Must obtain user yes before calling X' → confirmation_discipline.\n"
+    )
     system = (
         "You extract a structured contract from an agent's operating "
         "policy. Return ONLY a JSON object (no prose, no markdown fences) "
         "in EXACTLY this schema:\n\n"
         + schema_example
-        + "\n\nRULES:\n"
-        "- EVERY clause in EVERY section (obligations, forbidden_behaviors, "
-        "tool_sequences) MUST include all fields shown above. The 'id' "
-        "field is mandatory on every clause; ids must be unique across "
-        "the whole document (lowercase-kebab, prefixed obl- / fb- / ts-).\n"
+        + "\n\n"
+        + category_defs
+        + "\nRULES:\n"
+        "- EVERY clause in EVERY section MUST include all fields shown "
+        "above. Ids must be unique across the document (lowercase-kebab, "
+        "prefixed obl- / fb- / ts-).\n"
         "- 'category' must be one of EXACTLY these strings: "
         + ", ".join(known)
         + ". No other category values are allowed.\n"
+        "- Tag each clause using the DECISION HEURISTIC above. When in "
+        "doubt between policy_compliance and scope_adherence, choose "
+        "policy_compliance unless the clause is specifically about "
+        "transferring to a human.\n"
         "- Emit a tool_sequences entry only for mutating tools where the "
-        "policy implies a prerequisite read (e.g. get_user_details before "
-        "book_reservation). Each prerequisite must be a tool name from "
-        "the catalog below.\n"
+        "policy implies a prerequisite read.\n"
         "- Cover the major policy clauses — every distinct obligation "
         "and prohibition that an evaluator would need to check."
     )
