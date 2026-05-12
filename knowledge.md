@@ -92,3 +92,43 @@ Chronological. Each session entry: date, what was decided or done, what's next.
 4. `WRITEUP.md` — dimensions + justification, methodology, results, held-out angle, production-readiness at 100k users/day, what we chose not to build. **Mistagging story goes here** as a "what I chose not to fix in scope" / "what auto-generation costs you" data point.
 5. Polish `README.md`. Clean clone-and-run check.
 6. **Open question to address Day-2 morning:** is the auto-eval-vs-reward disagreement dominated by (a) clause mistagging by the contract generator, (b) gpt-4o-mini judge over-strictness, or (c) genuine reward-blind-spot wins for the auto-eval? Comparison should aggregate by category AND by clause id to disambiguate. If (a) dominates: consider regenerating with gpt-4o, or fold the mistagging story into the writeup. If (b) dominates: rerun judges with gpt-4o on the v0 trajectories.
+
+## Session 3 — 2026-05-12 (Day 2 complete)
+
+**Done this session:**
+- `data/tasks.json` (10 train + 10 held-out indices) and `data/variants/v2_preamble.md` (the v2 discipline preamble: confirmation, read-before-write, ground-from-tool-output).
+- `runner.py` gained `wiki_override` parameter for v2 (passes to ToolCallingAgent without touching the env). New test exercises the path.
+- `grounding_agent/compare.py` (~205 lines, pure computation): `ConfusionCell`, `confusion_matrix`, `pass_rate_by_split`, `clause_citation_counts`, `disagreements`, `variant_overview`. 12 new tests.
+- `scripts/run_eval.py` (~150 lines): per-task crash-safe caching, idempotent re-runs, supports `--variants`, `--splits`, `--force`.
+- `scripts/compare_to_reward.py` (~180 lines): renders `results/comparison.md` from `results/{v0,v2}_results.json`.
+- `code_review/2026-05-12-compare.md` written.
+- README.md rewritten with architecture diagram and verified clone-and-run path.
+- WRITEUP.md filled in with full §3 + §4 from real data.
+- One incident captured in errors.md: v0 task 9 errored inside tau-bench's `message_to_action` due to gpt-4o-mini emitting truncated JSON in tool arguments. Caught by `run_eval.py`'s per-task try/except; written as an `{error: ...}` record; excluded from aggregates.
+
+**Eval results (gpt-4o-mini end-to-end, ~$0.32 total):**
+- v0: n=19 (task 9 errored), reward 16% (train 11%, held_out 20%), avg msgs 30.6.
+- v2: n=20, reward 5% (train 0%, held_out 10%), avg msgs 40.2.
+- Per-dimension headline: `tool_sequence_correctness` went 74% → 95% (v2's "read before write" rule worked on its targeted dimension). `confirmation_discipline` stayed at 0% in both variants — `obl-confirm-action` cited in 19/19 then 20/20 failed verdicts. Smoking gun for judge over-strictness.
+- v2 made reward worse: extra confirmation rounds → 30% more messages → `max_steps=25` reached before completion. Multi-dimensional eval located the why; vibes-eval would have stopped at "v2 worse."
+
+**Decisions taken this session:**
+- v2 = preamble + wiki (not replacement of wiki). Same policy, more emphasis. Made the variant a pure emphasis treatment, not a policy edit.
+- Parallel v0 + v2 processes (each writes its own results file) instead of sequential. Halved wall-clock.
+- task 9 error: record + continue. Did not retry. The error-record-and-continue pattern is the right operational stance at scale; documented in WRITEUP §5.3.
+
+**Day 2 status:** all six BRIEF Day-2 items done.
+- ✅ Run agent v0 across 20 tasks.
+- ✅ Run v2 across 20 tasks.
+- ✅ Confusion matrix + disagreement examples (`results/comparison.md`).
+- ✅ `WRITEUP.md` with dimensions/justification, methodology, results, held-out angle, production-at-100k, what-I-chose-not-to-build.
+- ✅ Polished `README.md` with clone-and-run path.
+- ✅ 66 tests pass on clean checkout.
+
+**Final state:**
+- 5 modules, all under 300 lines (taxonomy 134, contract ~195, judges ~235, evaluator ~45, runner ~80, compare ~205).
+- 6 tests files: 66 passing tests.
+- 4 dated code-review entries covering every chunk.
+- 4 numbered artifacts under `data/` and `results/`.
+- 4 sessions logged in this file; one error in `errors.md`.
+- ~$0.32 spent on LLM calls across the full eval + smoke + contract gen.
