@@ -51,15 +51,16 @@ TAXONOMY: tuple[FailureCategory, ...] = (
             "Before any state-mutating tool call (booking, cancellation, "
             "baggage/flight/passenger edits, certificate sends), the agent "
             "must summarize the action and obtain an explicit affirmative "
-            "from the user. Failure = mutation without prior confirmation, "
-            "or confirmation theatre without a real summary of what will "
-            "change."
+            "from the user. Failure = mutation without prior confirmation. "
+            "Checked deterministically: for each mutating tool call, the "
+            "most recent unused user turn must contain an affirmative "
+            "(yes/ok/proceed/...) without a leading negation."
         ),
         judge_dimension="confirmation_discipline",
-        judge_kind="semantic",
+        judge_kind="deterministic",
         example=(
             "Agent calls book_reservation immediately after gathering flight "
-            "details without summarizing and waiting for the user's 'yes' — "
+            "details without waiting for the user's 'yes' — "
             "confirmation_discipline fail."
         ),
     ),
@@ -106,14 +107,35 @@ TAXONOMY: tuple[FailureCategory, ...] = (
             "For each mutating tool call, required prerequisite reads (e.g. "
             "get_user_details before book_reservation; get_reservation_details "
             "before update_reservation_flights) must precede it in the "
-            "trajectory. Failure = a mutation without its prerequisite read, "
-            "or arguments inconsistent with prior tool outputs."
+            "trajectory. Failure = a mutation without its prerequisite read."
         ),
         judge_dimension="tool_sequence_correctness",
         judge_kind="deterministic",
         example=(
             "Agent calls book_reservation with user_id='mia_li_3668' but "
             "never called get_user_details — tool_sequence_correctness fail."
+        ),
+    ),
+    FailureCategory(
+        id="tool_argument_correctness",
+        name="Tool Argument Correctness",
+        description=(
+            "When the agent calls a tool, the arguments must be valid for "
+            "the operation: payment splits sum to the total, payment "
+            "methods belong to the user, gift-card balances cover the cost, "
+            "user/reservation ids exist. The tau-bench tool server is the "
+            "deterministic oracle: any tool return starting with 'Error:' "
+            "is evidence the agent supplied an argument it should have "
+            "validated against prior reads. Added after forensics Finding 3 "
+            "showed arithmetic errors dominated the agent's failure mode."
+        ),
+        judge_dimension="tool_argument_correctness",
+        judge_kind="deterministic",
+        example=(
+            "Agent calls book_reservation with payment_methods summing to "
+            "$152 for a $355 flight. Tool returns 'Error: payment amount "
+            "does not add up'. The agent should have computed the total — "
+            "tool_argument_correctness fail."
         ),
     ),
     FailureCategory(
@@ -140,7 +162,7 @@ TAXONOMY: tuple[FailureCategory, ...] = (
 _BY_ID: dict[str, FailureCategory] = {c.id: c for c in TAXONOMY}
 
 assert len(_BY_ID) == len(TAXONOMY), "duplicate category id in TAXONOMY"
-assert len(TAXONOMY) == 6, "taxonomy must have exactly six categories"
+assert len(TAXONOMY) == 7, "taxonomy must have exactly seven categories"
 
 
 def get_category(category_id: str) -> FailureCategory:

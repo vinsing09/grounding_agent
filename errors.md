@@ -47,3 +47,29 @@ errors at the 0.5–2% level. The error-record-and-continue pattern is
 the right operational stance; alternatives (retry-with-temperature-0,
 patch tau-bench's `message_to_action` to be tolerant) are out of scope
 for a 2-day work trial. WRITEUP §5.3 mentions this explicitly.
+
+## 2026-05-12 — eventlog framing-key collision on first iter2 launch
+
+**Symptom:** Both v0 and v2 background processes terminated within
+~100ms of launch with `ValueError: payload key 'variant' would clobber
+a framing field`. Caught by EventLog.emit's collision check.
+
+**Root cause:** `scripts/run_eval.py:run_variant` emitted
+`variant_start` and `variant_end` events with `variant=variant` in
+the payload. But `variant` is one of EventLog's framing fields (ts,
+run_id, variant, event) — auto-injected from the EventLog instance.
+Passing it again as a payload key triggered the collision validator.
+
+**Fix:** removed `variant=variant` from both emit calls. The framing
+field already captures it.
+
+**Verification of design:** the validator is doing its job — it
+caught a redundancy bug at the first run. Without the check, the
+framing `variant` would have been silently overwritten by the
+(identical) payload value, but if the payload value had drifted
+(e.g. someone passed `variant=other_variant`) the log would have
+quietly mis-attributed events. Keeping the strict check.
+
+**Lesson:** before adding a payload key, check if it collides with
+the framing fields (ts, run_id, variant). They're listed in the
+EventLog docstring.

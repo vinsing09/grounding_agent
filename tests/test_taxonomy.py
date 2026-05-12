@@ -8,8 +8,10 @@ from grounding_agent.taxonomy import (
 )
 
 
-def test_taxonomy_has_six_categories():
-    assert len(TAXONOMY) == 6
+def test_taxonomy_has_seven_categories():
+    """Bucket C added tool_argument_correctness after forensics
+    Finding 3 (arithmetic errors dominate failures)."""
+    assert len(TAXONOMY) == 7
 
 
 def test_category_ids_are_unique():
@@ -38,14 +40,27 @@ def test_judge_kind_is_constrained():
         assert c.judge_kind in ("semantic", "deterministic")
 
 
-def test_exactly_one_deterministic_category():
-    det = [c for c in TAXONOMY if c.judge_kind == "deterministic"]
-    assert [c.id for c in det] == ["tool_sequence_correctness"]
+def test_deterministic_categories_are_exactly_expected():
+    """Three deterministic categories after the forensics-driven
+    refactor: tool_sequence (call ordering), confirmation_discipline
+    (per-mutation user-yes), tool_argument_correctness (tool-server
+    error responses)."""
+    det = sorted(c.id for c in TAXONOMY if c.judge_kind == "deterministic")
+    assert det == [
+        "confirmation_discipline",
+        "tool_argument_correctness",
+        "tool_sequence_correctness",
+    ]
 
 
-def test_five_semantic_categories():
-    sem = [c for c in TAXONOMY if c.judge_kind == "semantic"]
-    assert len(sem) == 5
+def test_semantic_categories_are_exactly_expected():
+    sem = sorted(c.id for c in TAXONOMY if c.judge_kind == "semantic")
+    assert sem == [
+        "information_grounding",
+        "policy_compliance",
+        "scope_adherence",
+        "task_completion",
+    ]
 
 
 def test_required_ids_present():
@@ -55,6 +70,7 @@ def test_required_ids_present():
         "information_grounding",
         "scope_adherence",
         "tool_sequence_correctness",
+        "tool_argument_correctness",
         "task_completion",
     }
     assert {c.id for c in TAXONOMY} == required

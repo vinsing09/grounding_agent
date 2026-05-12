@@ -223,6 +223,12 @@ def variant_overview(
     n_cost = 0.0
     n_msgs: list[int] = []
     per_split_reward: dict[str, list[int]] = {}
+    n_errors = 0
+    for ti_rec in (variant_data.get("tasks") or {}).items():
+        tk, rec = ti_rec
+        if "error" in rec:
+            n_errors += 1
+            continue
     for ti, rec in _iter_task_records(variant_data):
         n_tasks += 1
         rp = 1 if float(rec.get("reward", 0.0)) >= 1.0 else 0
@@ -237,6 +243,7 @@ def variant_overview(
         "variant": variant_data.get("variant"),
         "label": variant_data.get("label"),
         "n_tasks": n_tasks,
+        "n_errors": n_errors,
         "reward_pass_overall": (
             n_reward_pass / n_tasks if n_tasks else float("nan")
         ),
@@ -247,3 +254,97 @@ def variant_overview(
         "avg_messages": (sum(n_msgs) / len(n_msgs)) if n_msgs else 0.0,
         "total_cost": n_cost,
     }
+
+
+# ---- Bucket D: termination + reward-kind breakdowns -----------------------
+
+
+def reward_kind(record: dict[str, Any]) -> str:
+    """Categorise a graded task record by tau-bench reward kind.
+
+    Returns one of:
+      - 'r_actions'  — DB-state match against gold action list
+      - 'r_outputs'  — final-text-match against expected outputs
+      - 'no_grade'   — env did not compute reward_info (max_steps,
+                       crash, etc.)
+    """
+    info = record.get("info") or {}
+    ri = info.get("reward_info")
+    if ri is None:
+        return "no_grade"
+    inner = (ri.get("info") or {}) if isinstance(ri, dict) else {}
+    if "r_actions" in inner:
+        return "r_actions"
+    if "r_outputs" in inner:
+        return "r_outputs"
+    return "no_grade"
+
+
+def termination_kind(record: dict[str, Any]) -> str:
+    """Termination kind from the runner's classification.
+
+    Returns 'max_steps' / 'transfer' / 'completed' for graded records;
+    'error' for errored records (those carry no 'termination' field);
+    'unknown' for older records that pre-date Bucket D.
+    """
+    if "error" in record:
+        return "error"
+    t = record.get("termination") or {}
+    return t.get("kind", "unknown")
+
+
+def reward_kind_breakdown(
+    variant_data: dict[str, Any],
+    splits: dict[str, list[int]],
+) -> dict[str, dict[str, dict[str, int]]]:
+    """{kind: {split: {n, n_passed}}} for each reward_kind seen,
+    with an 'all' bucket per kind."""
+    out: dict[str, dict[str, dict[str, int]]] = {}
+    for ti, rec in _iter_task_records(variant_data):
+        kind = reward_kind(rec)
+        sp = split_of(ti, splits) or "unknown"
+        passed = float(rec.get("reward", 0.0)) >= 1.0
+        for bucket in (sp, "all"):
+            d = out.setdefault(kind, {}).setdefault(
+                bucket, {"n": 0, "n_passed": 0}
+            )
+            d["n"] += 1
+            if passed:
+                d["n_passed"] += 1
+    return out
+
+
+def termination_breakdown(
+    variant_data: dict[str, Any],
+    splits: dict[str, list[int]],
+) -> dict[str, dict[str, int]]:
+    """{kind: {split: count}} for each termination_kind. Includes
+    errored tasks under the 'error' bucket."""
+    out: dict[str, dict[str, int]] = {}
+    for tk_str, rec in (variant_data.get("tasks") or {}).items():
+        try:
+            tk = int(tk_str)
+        except ValueError:
+            continue
+        kind = termination_kind(rec)
+        sp = split_of(tk, splits) or "unknown"
+        for bucket in (sp, "all"):
+            out.setdefault(kind, {})[bucket] = (
+                out.setdefault(kind, {}).get(bucket, 0) + 1
+            )
+    return out
+
+
+def tool_error_counts(
+    variant_data: dict[str, Any],
+) -> dict[str, int]:
+    """Count how often each tool's call resulted in a tool-side error
+    across the variant. Reads `record['tool_errors']` (populated by
+    runner.run_task after Bucket D). Returns {} for older records
+    that lack the field."""
+    out: dict[str, int] = {}
+    for _, rec in _iter_task_records(variant_data):
+        for err in (rec.get("tool_errors") or []):
+            tool = err.get("tool") or "?"
+            out[tool] = out.get(tool, 0) + 1
+    return out

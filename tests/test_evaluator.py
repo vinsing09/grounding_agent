@@ -57,11 +57,21 @@ def _empty_semantic_contract() -> dict:
 
 
 def _good_trajectory() -> list[dict]:
+    """A fully-correct trajectory: prerequisites observed, user "yes"
+    before the mutation, no tool errors. Bucket A made
+    confirmation_discipline deterministic, so the user turn between
+    summary and mutation is now load-bearing for the verdict."""
     return [
         {"role": "system", "content": "<wiki>"},
         {"role": "user", "content": "Book me NYC->SEA."},
         _tool_call_msg("c1", "get_user_details", {"user_id": "u1"}),
         _tool_result_msg("c1", "get_user_details", "{}"),
+        {
+            "role": "assistant",
+            "content": "Confirming: book NYC->SEA flight F1 for $250. OK?",
+            "tool_calls": None,
+        },
+        {"role": "user", "content": "yes"},
         _tool_call_msg("c2", "book_reservation", {"user_id": "u1", "flight": "F1"}),
         _tool_result_msg("c2", "book_reservation", '{"reservation_id":"R1"}'),
     ]
@@ -83,6 +93,7 @@ def test_evaluate_returns_one_result_per_category():
         "information_grounding",
         "scope_adherence",
         "tool_sequence_correctness",
+        "tool_argument_correctness",
     }
     for r in results.values():
         assert isinstance(r, JudgeResult)
@@ -96,22 +107,29 @@ def test_evaluate_all_pass_on_well_formed_trajectory():
 def test_evaluate_flags_tool_sequence_violation():
     results = evaluate_trajectory(_bad_trajectory(), _empty_semantic_contract())
     assert results["tool_sequence_correctness"].passed is False
+    # confirmation_discipline is now deterministic (Bucket A): the
+    # bad trajectory has a mutation with no user "yes" — fails.
+    assert results["confirmation_discipline"].passed is False
     # semantic judges still vacuous-pass since the contract has no
     # obligations/forbidden_behaviors for them
     for cat in (
         "policy_compliance",
-        "confirmation_discipline",
         "information_grounding",
         "scope_adherence",
     ):
         assert results[cat].passed is True
+    # tool_argument_correctness: trajectory's tool returned "{}" (no
+    # error) so this passes
+    assert results["tool_argument_correctness"].passed is True
 
 
 def test_summarize_shape():
     results = evaluate_trajectory(_bad_trajectory(), _empty_semantic_contract())
     s = summarize(results)
-    assert s["n_dimensions"] == 5
-    assert s["n_failed"] == 1
+    assert s["n_dimensions"] == 6
+    # bad trajectory: tool_seq fails AND confirmation_discipline fails
+    # (Bucket A made it deterministic and the bad trajectory has no yes)
+    assert s["n_failed"] == 2
     assert s["n_passed"] == 4
     assert set(s["by_dimension"].keys()) == set(results.keys())
     failing = s["by_dimension"]["tool_sequence_correctness"]

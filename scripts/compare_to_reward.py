@@ -17,6 +17,9 @@ from grounding_agent.compare import (
     confusion_matrix,
     disagreements,
     pass_rate_by_split,
+    reward_kind_breakdown,
+    termination_breakdown,
+    tool_error_counts,
     variant_overview,
 )
 
@@ -42,13 +45,74 @@ def _cell_line(cell: ConfusionCell) -> str:
 
 def _overview_table(ov: dict[str, Any]) -> list[str]:
     rps = ov["reward_pass_by_split"]
+    err = f", errors={ov['n_errors']}" if ov.get("n_errors") else ""
     return [
-        f"- **{ov['label']}** — n={ov['n_tasks']}, "
+        f"- **{ov['label']}** — n={ov['n_tasks']}{err}, "
         f"tau-bench reward pass: all {_pct(ov['reward_pass_overall'])}, "
         f"train {_pct(rps.get('train', float('nan')))}, "
         f"held_out {_pct(rps.get('held_out', float('nan')))}; "
         f"avg msgs/run {ov['avg_messages']:.1f}, total cost ${ov['total_cost']:.4f}"
     ]
+
+
+def _termination_section(
+    label: str, termination_data: dict[str, dict[str, int]]
+) -> list[str]:
+    lines = [f"### {label}", ""]
+    if not termination_data:
+        lines.append("_no termination data — older results file?_")
+        lines.append("")
+        return lines
+    kinds = sorted(termination_data.keys())
+    lines.append("| termination | train | held_out | all |")
+    lines.append("|---|---:|---:|---:|")
+    for k in kinds:
+        row = termination_data[k]
+        lines.append(
+            f"| `{k}` | {row.get('train', 0)} | "
+            f"{row.get('held_out', 0)} | {row.get('all', 0)} |"
+        )
+    lines.append("")
+    return lines
+
+
+def _reward_kind_section(
+    label: str, bk: dict[str, dict[str, dict[str, int]]]
+) -> list[str]:
+    """Render reward-kind decomposition: per kind, n / passed / pass rate."""
+    lines = [f"### {label}", ""]
+    if not bk:
+        lines.append("_no reward data_")
+        lines.append("")
+        return lines
+    lines.append("| reward kind | split | n | passed | pass rate |")
+    lines.append("|---|---|---:|---:|---:|")
+    for kind in sorted(bk.keys()):
+        for split in ("train", "held_out", "all"):
+            cell = bk[kind].get(split)
+            if cell is None:
+                continue
+            rate = cell["n_passed"] / cell["n"] if cell["n"] else float("nan")
+            lines.append(
+                f"| `{kind}` | {split} | {cell['n']} | "
+                f"{cell['n_passed']} | {_pct(rate)} |"
+            )
+    lines.append("")
+    return lines
+
+
+def _tool_error_section(label: str, counts: dict[str, int]) -> list[str]:
+    lines = [f"### {label}", ""]
+    if not counts:
+        lines.append("_no tool-side errors observed (or older results file)_")
+        lines.append("")
+        return lines
+    lines.append("| tool | tool-side errors |")
+    lines.append("|---|---:|")
+    for name, n in sorted(counts.items(), key=lambda kv: -kv[1]):
+        lines.append(f"| `{name}` | {n} |")
+    lines.append("")
+    return lines
 
 
 def _confusion_section(
@@ -176,6 +240,24 @@ def render_markdown(
             continue
         lines.append(f"## {label}")
         lines.append("")
+        lines.extend(
+            _termination_section(
+                f"Termination distribution ({label})",
+                termination_breakdown(variant_data, splits),
+            )
+        )
+        lines.extend(
+            _reward_kind_section(
+                f"Reward decomposition by tau-bench grading kind ({label})",
+                reward_kind_breakdown(variant_data, splits),
+            )
+        )
+        lines.extend(
+            _tool_error_section(
+                f"Tool-side errors by tool ({label})",
+                tool_error_counts(variant_data),
+            )
+        )
         lines.extend(
             _rates_section(
                 f"Per-dimension pass rate ({label})",

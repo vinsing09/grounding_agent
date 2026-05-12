@@ -203,3 +203,153 @@ def test_errored_tasks_excluded_from_confusion_matrix():
     for cat, by_split in cm.items():
         for bk, cell in by_split.items():
             assert cell.total <= 5
+
+
+# ---- Bucket D: reward_kind / termination_kind / breakdowns ----------------
+
+
+def _variant_with_termination_and_kinds() -> dict:
+    """Mirrors the record shape after Bucket D: each non-errored
+    record has `termination` and `info.reward_info.info` with either
+    r_actions or r_outputs."""
+    return {
+        "variant": "v0",
+        "label": "v0",
+        "tasks": {
+            "0": {
+                "task_index": 0,
+                "reward": 1.0,
+                "messages": [],
+                "total_cost": 0.01,
+                "info": {"reward_info": {"info": {"r_actions": 1.0}, "reward": 1.0}},
+                "termination": {"kind": "completed", "transferred": False},
+                "tool_errors": [],
+                "evaluation": {
+                    "policy_compliance": {
+                        "category": "policy_compliance",
+                        "passed": True, "reason": "", "clause_refs": [],
+                    }
+                },
+            },
+            "1": {
+                "task_index": 1,
+                "reward": 0.0,
+                "messages": [],
+                "total_cost": 0.01,
+                "info": {"reward_info": {"info": {"r_outputs": 0.0, "outputs": {}}, "reward": 0.0}},
+                "termination": {"kind": "completed", "transferred": False},
+                "tool_errors": [{"position": 4, "tool": "book_reservation",
+                                 "message": "Error: payment amount does not add up"}],
+                "evaluation": {
+                    "policy_compliance": {
+                        "category": "policy_compliance",
+                        "passed": False, "reason": "", "clause_refs": ["obl-x"],
+                    }
+                },
+            },
+            "2": {
+                "task_index": 2,
+                "reward": 1.0,
+                "messages": [],
+                "total_cost": 0.01,
+                "info": {"reward_info": {"info": {"r_actions": 1.0}, "reward": 1.0}},
+                "termination": {"kind": "transfer", "transferred": True},
+                "tool_errors": [],
+                "evaluation": {"policy_compliance": {
+                    "category": "policy_compliance",
+                    "passed": True, "reason": "", "clause_refs": [],
+                }},
+            },
+            "10": {
+                "task_index": 10,
+                "reward": 0.0,
+                "messages": [],
+                "total_cost": 0.01,
+                "info": {"reward_info": None},
+                "termination": {"kind": "max_steps", "transferred": False},
+                "tool_errors": [
+                    {"position": 8, "tool": "book_reservation", "message": "Error: gift card"},
+                    {"position": 12, "tool": "book_reservation", "message": "Error: gift card"},
+                ],
+                "evaluation": {"policy_compliance": {
+                    "category": "policy_compliance",
+                    "passed": False, "reason": "", "clause_refs": [],
+                }},
+            },
+            "99": {"task_index": 99, "error": "Boom"},
+        },
+    }
+
+
+def test_reward_kind_returns_r_actions():
+    from grounding_agent.compare import reward_kind
+    rec = _variant_with_termination_and_kinds()["tasks"]["0"]
+    assert reward_kind(rec) == "r_actions"
+
+
+def test_reward_kind_returns_r_outputs():
+    from grounding_agent.compare import reward_kind
+    rec = _variant_with_termination_and_kinds()["tasks"]["1"]
+    assert reward_kind(rec) == "r_outputs"
+
+
+def test_reward_kind_returns_no_grade_when_reward_info_none():
+    from grounding_agent.compare import reward_kind
+    rec = _variant_with_termination_and_kinds()["tasks"]["10"]
+    assert reward_kind(rec) == "no_grade"
+
+
+def test_termination_kind_uses_recorded_classification():
+    from grounding_agent.compare import termination_kind
+    fx = _variant_with_termination_and_kinds()
+    assert termination_kind(fx["tasks"]["0"]) == "completed"
+    assert termination_kind(fx["tasks"]["2"]) == "transfer"
+    assert termination_kind(fx["tasks"]["10"]) == "max_steps"
+
+
+def test_termination_kind_handles_errored_record():
+    from grounding_agent.compare import termination_kind
+    fx = _variant_with_termination_and_kinds()
+    assert termination_kind(fx["tasks"]["99"]) == "error"
+
+
+def test_termination_kind_legacy_record_returns_unknown():
+    """Records produced before Bucket D have no `termination` key."""
+    from grounding_agent.compare import termination_kind
+    assert termination_kind({"task_index": 0, "reward": 0.0}) == "unknown"
+
+
+def test_reward_kind_breakdown():
+    from grounding_agent.compare import reward_kind_breakdown
+    bk = reward_kind_breakdown(_variant_with_termination_and_kinds(), SPLITS)
+    # tasks 0,2 are r_actions in train, all passed
+    # task 1 is r_outputs in train, failed
+    # task 10 is no_grade in held_out, failed
+    assert bk["r_actions"]["train"] == {"n": 2, "n_passed": 2}
+    assert bk["r_actions"]["all"]["n_passed"] == 2
+    assert bk["r_outputs"]["train"] == {"n": 1, "n_passed": 0}
+    assert bk["no_grade"]["held_out"] == {"n": 1, "n_passed": 0}
+
+
+def test_termination_breakdown_includes_error():
+    from grounding_agent.compare import termination_breakdown
+    bk = termination_breakdown(_variant_with_termination_and_kinds(), SPLITS)
+    # 0+1=completed (train), 2=transfer (train), 10=max_steps (held_out), 99=error (held_out? no — unknown)
+    assert bk["completed"]["train"] == 2
+    assert bk["transfer"]["train"] == 1
+    assert bk["max_steps"]["held_out"] == 1
+    # task 99 has no split (not in train/held_out lists) → "unknown"
+    assert bk["error"]["unknown"] == 1
+
+
+def test_tool_error_counts():
+    from grounding_agent.compare import tool_error_counts
+    counts = tool_error_counts(_variant_with_termination_and_kinds())
+    assert counts["book_reservation"] == 3  # task 1: 1, task 10: 2
+
+
+def test_variant_overview_includes_n_errors():
+    from grounding_agent.compare import variant_overview
+    ov = variant_overview(_variant_with_termination_and_kinds(), SPLITS)
+    assert ov["n_tasks"] == 4   # 0,1,2,10
+    assert ov["n_errors"] == 1  # task 99
