@@ -1,0 +1,125 @@
+{
+  "agent": "tau_bench_airline",
+  "obligations": [
+    {
+      "id": "obl-obtain-user-id",
+      "text": "Obtain the user id before booking a flight.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-obtain-trip-details",
+      "text": "Ask for the trip type, origin, and destination before booking a flight.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-confirm-action",
+      "text": "List the action details and obtain explicit user confirmation to proceed before updating the booking database.",
+      "category": "confirmation_discipline"
+    },
+    {
+      "id": "obl-ask-travel-insurance",
+      "text": "Ask if the user wants to buy travel insurance when booking a flight.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-obtain-reservation-id",
+      "text": "Obtain the reservation id before modifying a flight.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-obtain-cancellation-details",
+      "text": "Obtain the user id, reservation id, and reason for cancellation before cancelling a flight.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-ensure-cancellation-conditions",
+      "text": "Ensure the cancellation conditions are met before proceeding with a cancellation.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-ensure-modification-conditions",
+      "text": "Ensure the modification conditions are met before proceeding with a flight modification.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-ask-payment-method",
+      "text": "Ask for the payment or refund method if the flights are changed.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-deny-requests-against-policy",
+      "text": "Deny user requests that are against this policy.",
+      "category": "policy_compliance"
+    },
+    {
+      "id": "obl-transfer-to-human",
+      "text": "Transfer the user to a human agent if the request cannot be handled within the scope of actions.",
+      "category": "policy_compliance"
+    }
+  ],
+  "forbidden_behaviors": [
+    {
+      "id": "fb-provide-unverified-info",
+      "text": "Do not provide any information, knowledge, or procedures not provided by the user or available tools.",
+      "category": "information_grounding"
+    },
+    {
+      "id": "fb-simultaneous-tool-call",
+      "text": "Do not make a tool call and respond to the user simultaneously.",
+      "category": "tool_sequence_correctness"
+    },
+    {
+      "id": "fb-modify-basic-economy",
+      "text": "Do not modify basic economy flights.",
+      "category": "scope_adherence"
+    },
+    {
+      "id": "fb-modify-passenger-count",
+      "text": "Do not modify the number of passengers in a reservation.",
+      "category": "scope_adherence"
+    },
+    {
+      "id": "fb-add-insurance-after-booking",
+      "text": "Do not add insurance after the initial booking.",
+      "category": "scope_adherence"
+    },
+    {
+      "id": "fb-cancel-flights-after-use",
+      "text": "Do not cancel a trip if any of the segments have already been used.",
+      "category": "scope_adherence"
+    },
+    {
+      "id": "fb-proactive-compensation",
+      "text": "Do not proactively offer compensation unless the user complains and explicitly asks for it.",
+      "category": "policy_compliance"
+    }
+  ],
+  "tool_sequences": [
+    {
+      "id": "ts-book-reservation",
+      "target_tool": "book_reservation",
+      "prerequisite_tools": [
+        "get_user_details"
+      ],
+      "category": "tool_sequence_correctness"
+    },
+    {
+      "id": "ts-update-reservation-flights",
+      "target_tool": "update_reservation_flights",
+      "prerequisite_tools": [
+        "get_user_details",
+        "get_reservation_details"
+      ],
+      "category": "tool_sequence_correctness"
+    },
+    {
+      "id": "ts-cancel-reservation",
+      "target_tool": "cancel_reservation",
+      "prerequisite_tools": [
+        "get_user_details",
+        "get_reservation_details"
+      ],
+      "category": "tool_sequence_correctness"
+    }
+  ]
+}
