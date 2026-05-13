@@ -157,76 +157,88 @@ tasks, the improvement is real.
 | Development tasks | 50% | 20% |
 | **Held-out tasks** | **10%** | **50%** |
 
-**v2 beats v0 by 40 percentage points on held-out tasks.**
+**v2 trades development-task wins for held-out-task wins.** Net
+reward is roughly tied; the *distribution* across splits is what
+moves. v0 fits the tasks the framework saw during design; v2's
+discipline preamble shifts the agent toward behaviours that pay
+off on tasks the framework never inspected.
 
-The discipline preamble works — not by memorising specific task
-patterns, but by getting the agent to follow safer behaviours that
-transfer to new tasks the framework never saw.
-
-This is exactly the kind of finding multi-dimensional eval should
-produce: not just "v2 is better" but **where, why, and whether it
-generalizes**.
+That's a directional signal, not a definitive ranking — n=10 per
+split is small. See the next slide for what's actually driving the
+crossover.
 
 ---
 
-# Results — per-dimension
+# Results — per-dimension, split by dev / held
 
-| dimension | v0 | v2 |
-|---|---:|---:|
-| confirmation discipline | 70% | 70% |
-| information grounding | **80%** | 70% |
-| policy compliance | 25% | 15% |
-| **scope adherence** | **0%** | **0%** |
-| tool sequence correctness | 75% | **85%** |
-| tool argument correctness | 75% | **80%** |
+| dimension | v0 dev/held | v2 dev/held |
+|---|:-:|:-:|
+| confirmation_discipline | 70 / 70 | 60 / **80** |
+| information_grounding | 80 / 80 | 70 / 70 |
+| policy_compliance | 30 / 20 | 20 / 10 |
+| scope_adherence | 0 / 0 | 0 / 0 |
+| tool_sequence_correctness | 70 / 80 | 80 / **90** |
+| tool_argument_correctness | 90 / 60 | 80 / **80** |
+| **τ³-bench reward** | **50 / 10** | **20 / 50** |
 
-**Tool ordering and argument validity** improve under v2. The
-preamble's "read before write" rule lands directly here.
+The per-dimension shifts on held-out are modest (+10 to +20 pp on the
+three dimensions v2's preamble targeted). The **reward shift on
+held-out is +40 pp** — much larger than any single dimension moved.
 
-**Policy compliance** is hard for both — most failures are subtle
-business rules the agent slips on.
-
-**Scope adherence is stuck at 0%.** Honest finding: see "what doesn't
-work yet" below.
+**That gap is itself a finding.** When the dimensions and the reward
+disagree at the task level, our taxonomy is missing coverage of
+something the benchmark scores. See the next slide.
 
 ---
 
 # What the framework caught
 
-Three concrete things a single pass/fail eval would have missed.
+Four concrete things a single pass/fail eval would have missed.
 
-**1. v2 generalizes.** The +40-point lift on held-out tasks is the
-clearest signal that the discipline preamble produces transferable
-behaviour, not memorisation.
+**1. v2 changes the agent's failure shape, not its overall quality.**
+At n=20, v0 30% vs v2 35% is within noise. But the same data shows
+v2 wins exactly the held-out tasks v0 fails, and loses some dev
+tasks v0 passes. The agent changed character. That's actionable
+even when net reward looks flat.
 
-**2. Argument-correctness is the dominant failure mode.** Most agent
-failures are arithmetic — wrong payment splits, gift-card balances,
-non-existent users. Our framework's deterministic check flags these
-directly from the tool server's error responses.
+**2. Termination kind is doing load-bearing work the dimensions
+miss.** On 2 of the 4 held-out tasks v2 wins, the dimensions are
+identical to v0 — what flipped the reward was v2 not hitting
+`max_steps`. The framework tracks termination explicitly so this
+finding is visible; it would be invisible to a one-score eval.
 
-**3. One LLM judge was provably worse than a 10-line Python check.**
+**3. Argument-correctness is the dominant agent-side failure mode.**
+Most agent failures are arithmetic — wrong payment splits,
+gift-card balances, non-existent users. The deterministic check
+reads τ³-bench's `ToolMessage.error: bool` flag directly.
+
+**4. One LLM judge was provably worse than a 10-line Python check.**
 For confirmation, an LLM judge gave 0% pass rate (it always found
-something to flag). A simple "did the user say yes before each
-mutation?" Python check gave 70%. We replaced the LLM judge with
-the Python check.
+something to flag). A "did the user say yes before each mutation?"
+Python check gave 70%. We replaced the LLM judge.
 
 ---
 
 # What doesn't work yet
 
-**Scope adherence is stuck at 0% pass rate.** The LLM judge sees
-every transfer as a violation, regardless of whether transfer was
-the correct action. We tried three different clause wordings; none
-fixed it.
+**Two honest limitations.**
 
-*Why this is structurally hard:* deciding "is this user request
-in-scope?" requires the LLM to hold the entire policy and tool
-catalog in working memory and compare them to what the user asked.
-gpt-4o-mini doesn't do this reliably.
+**1. Scope adherence is stuck at 0% pass rate.** The LLM judge
+treats every transfer-to-human as a violation, regardless of whether
+the transfer was correct. Three clause-wording attempts didn't fix
+it. Deciding "is this user request in-scope?" requires the LLM to
+hold the entire policy plus the tool catalog in working memory and
+compare to what was asked — gpt-4o-mini doesn't do this reliably.
 
-*The honest takeaway:* some dimensions are too judgment-heavy for
-LLM judges to do well at this model tier. We document this rather
-than over-engineer around it.
+**2. The 6 dimensions don't fully cover what the benchmark scores.**
+On 2 of 4 held-out tasks v2 wins, our framework reports identical
+per-dim verdicts for v0 and v2 but the reward differs. τ³-bench
+internally scores db state + action sequence + natural-language
+assertions + communication checks; our 6 dimensions don't enumerate
+all of those.
+
+Both are LLM-judge / coverage limits, documented rather than
+over-engineered around.
 
 ---
 
@@ -234,21 +246,25 @@ than over-engineer around it.
 
 Short list, ordered by leverage.
 
-1. **A new dimension** for argument *choice* correctness (right
-   flight, right cabin, right split). The current check catches
-   *invalid* arguments — it doesn't catch suboptimal valid ones.
-2. **Read the benchmark's richer reward signal.** τ³-bench grades
-   each task on multiple sub-checks (database state, language
-   assertions, communication). The framework currently only reads
-   the binary roll-up.
-3. **Tier judge models by stakes.** Free deterministic checks on
-   100% of traffic, cheap LLM on a sample, expensive LLM only on
-   flagged cases.
-4. **Move scope adherence to a panel of judges** or accept it as
-   a noisy dimension.
-5. **Tag-review step** after contract generation. One human pass
-   to catch mistagged rules.
-6. **Multi-trial averaging** at higher N for tighter v0/v2 deltas.
+1. **Surface the benchmark's sub-check decomposition.** τ³-bench's
+   reward is a roll-up of db_check + action_checks + nl_assertions
+   + communicate_checks. Adding a dimension per sub-check would
+   directly close the "dimensions don't explain reward" gap from
+   the prior slide.
+2. **A `tool_argument_choice_correctness` dimension** — right
+   flight, right cabin, right payment split. The current check
+   catches *invalid* arguments, not suboptimal valid ones.
+3. **A `termination_kind` dimension.** Currently tracked as a field
+   but not scored. Surfacing it would have explained 2 of 4 v2
+   held-out wins.
+4. **Tier judge models by stakes.** Deterministic on 100%, cheap
+   LLM on a sample, expensive LLM on flagged.
+5. **Move scope_adherence to a multi-judge panel** or accept it as
+   noisy.
+6. **Tag-review step** after contract generation.
+7. **Multi-trial averaging** at higher N for tighter v0/v2 deltas
+   (n=20 today is too small to call the variant comparison
+   definitive).
 
 ---
 

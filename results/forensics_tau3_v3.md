@@ -118,6 +118,51 @@ right kind of result for the framework to surface.
   `ToolMessage.error: bool` field is a deterministic signal cleaner
   than our prior grep-for-`Error:` heuristic.
 
+## Post-iter-3 audit: dimensions vs reward at task level
+
+After the three-iteration cycle, a task-level audit was run to
+sanity-check the per-dimension story against the reward story
+(prompted by the question "the per-dim deltas are 10–20pp but the
+held-out reward delta is 40pp — what's driving the gap?").
+
+**Reward shift on held-out (v0 → v2):** 1/10 → 5/10 = +40pp.
+
+**Per-dimension shift on held-out (v0 → v2), averaged across the
+six dimensions:** roughly +5pp.
+
+**The discrepancy decomposes as follows:**
+
+| v2 win | split | v0 termination | v2 termination | dims where v0 F → v2 P |
+|---|---|---|---|---|
+| task 6 | held | max_steps | transfer | confirmation, info, tool_arg |
+| task 16 | held | completed | completed | **none** (all 6 dims identical) |
+| task 18 | held | completed | completed | info, tool_seq |
+| task 19 | held | max_steps | completed | **none** (all 6 dims identical) |
+
+2 of 4 held-out wins (tasks 16 and 19) have **identical per-dim
+verdicts in v0 and v2** but different reward. The other 2 are
+partially explained by dimensional movement plus a termination-kind
+flip (`max_steps` → graded completion).
+
+**Conclusion: the 6 dimensions don't fully cover what τ³-bench's
+reward scores.** That's a coverage gap, not a calibration error.
+The framework correctly produces honest per-dim verdicts; the
+mismatch with reward at the task level tells the operator their
+taxonomy is incomplete relative to the benchmark's grading.
+
+**Implications for the framework's headline framing:**
+
+- The honest claim is **"v2 trades dev wins for held-out wins"**
+  (a distribution shift), not **"v2 generalises +40pp better"**
+  (which conflates a per-dimension claim with a reward claim).
+- Two next-step dimensions would close most of this gap:
+  - a `termination_kind` dimension (scored, not just tracked).
+  - per-sub-check decomposition of τ³-bench's `RewardInfo`
+    (db_check / action_checks / nl_assertions / communicate_checks).
+
+The presentation and WRITEUP §3.4 + §4.3 have been updated to
+reflect this honestly.
+
 ## Decision: stop at iter-3
 
 Three iterations were performed. Iter-1 → iter-2 produced clear

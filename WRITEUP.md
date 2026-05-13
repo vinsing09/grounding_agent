@@ -23,17 +23,22 @@ development + 10 held-out), under two prompt variants.
 
 ### Headline numbers (final iteration, τ³-bench, gpt-4o-mini end-to-end)
 
-- **v0 (baseline prompt) reward 30%** (6/20).
-- **v2 (with discipline preamble) reward 35%** (7/20).
-- **v2 held-out: 50%** vs v0's 10%. The 40-percentage-point gap on
-  tasks the framework didn't see during development is the clearest
-  generalization signal.
+- **v0 (baseline prompt) reward 30%** (6/20). **v2 (with discipline
+  preamble) reward 35%** (7/20). Overall reward is roughly tied at
+  n=20.
+- **Split-level pattern: v2 trades dev wins for held-out wins.**
+  v0 = 5 dev passes + 1 held; v2 = 2 dev + 5 held. Net +1 task,
+  but the *distribution* shifted dramatically. v0 fits dev-style
+  tasks; v2's preamble pays off on held-out.
+- **The per-dimension scores partially explain this — not fully.**
+  Dimensions move +10 to +20 pp on the three dimensions v2's
+  preamble targeted; reward moves +40 pp on held-out. **The gap
+  is itself a finding** (§3.4).
 - **`confirmation_discipline`** went from 0% pass-rate (under an LLM
-  judge) to 70% (under a deterministic Python check) — and the
+  judge) to 70% (under a deterministic Python check) — the
   reclassification holds across benchmarks.
-- **`tool_argument_correctness`** is a deterministic check on τ³-bench's
-  `ToolMessage.error: bool` flag — 75% pass-rate, catches every
-  payment-arithmetic failure.
+- **`tool_argument_correctness`** is a deterministic check on
+  τ³-bench's `ToolMessage.error: bool` flag — 75–80% pass-rate.
 - **`scope_adherence` is structurally stuck at 0%** — the LLM judge
   cannot reliably decide whether a transfer-to-human was scope-
   appropriate, regardless of clause wording. Documented as a known
@@ -198,25 +203,36 @@ improvement on held-out tasks means the improvement *generalizes*.
 | **v0** (baseline) | 20 | 30% | 50% | **10%** | 22.7 | $0.09 |
 | **v2** (preamble) | 20 | 35% | 20% | **50%** | 24.2 | $0.13 |
 
-**Headline:** v2's discipline preamble *trades* development-task
-reward for held-out-task reward. v2 generalises +40pp on held-out
-where v0 fails outright. Reward overall is roughly tied; the
-distribution across splits is the result.
+v2's discipline preamble *trades* dev-task reward for held-out-task
+reward. Net is +1 task. The +40pp held-out shift is real signal at
+n=10 per split, but at this sample size it is a *direction*, not a
+definitive ranking.
 
-### 3.2 Per-dimension pass rates
+The interesting question is **why** the held-out shift happens.
+The per-dimension table (§3.2) and the task-level analysis (§3.4)
+show the answer is not uniform across our 6 dimensions.
 
-| dimension | v0 | v2 |
-|---|---:|---:|
-| `confirmation_discipline` | 70% | 70% |
-| `information_grounding` | 80% | 70% |
-| `policy_compliance` | 25% | 15% |
-| `scope_adherence` | **0%** | **0%** |
-| `tool_sequence_correctness` | 75% | 85% |
-| `tool_argument_correctness` | 75% | 80% |
+### 3.2 Per-dimension pass rates (split by dev / held-out)
 
-Two dimensions improved under v2 (`tool_sequence_correctness`,
-`tool_argument_correctness`) — both directly targeted by the
-preamble. Two are roughly tied. Two regressed slightly under v2.
+| dimension | v0 dev / held / all | v2 dev / held / all |
+|---|:-:|:-:|
+| `confirmation_discipline` | 70 / 70 / 70 | 60 / **80** / 70 |
+| `information_grounding`   | 80 / 80 / 80 | 70 / 70 / 70 |
+| `policy_compliance`       | 30 / 20 / 25 | 20 / 10 / 15 |
+| `scope_adherence`         | 0 / 0 / 0 | 0 / 0 / 0 |
+| `tool_sequence_correctness` | 70 / 80 / 75 | 80 / **90** / 85 |
+| `tool_argument_correctness` | 90 / 60 / 75 | 80 / **80** / 80 |
+| **τ³-bench reward** | **50 / 10 / 30** | **20 / 50 / 35** |
+
+On held-out, v2 shows modest improvements on the three dimensions
+the preamble targeted (`confirmation_discipline` +10pp,
+`tool_sequence_correctness` +10pp, `tool_argument_correctness`
++20pp). Two dimensions are tied. One regressed slightly. **The
+aggregate per-dimension shift on held-out is roughly +5pp averaged
+across all six.** The reward shift on held-out is +40pp.
+
+**That mismatch is itself the most interesting finding** — see §3.4.
+
 Full confusion matrices in `results/comparison.md`.
 
 ### 3.3 Per-dimension confusion matrix (vs τ³-bench reward)
@@ -242,27 +258,51 @@ trajectory, even when the reward agrees the transfer was correct.
 
 ### 3.4 What the framework caught that vibes-eval would not
 
-**1. v2 generalises.** The +40pp lift on held-out tasks (50% vs
-10%) is the clearest signal that the discipline preamble produces
-transferable behaviour, not memorisation of specific task patterns.
-A single-score eval would have shown "v0 30%, v2 35%" and stopped.
+**1. v2 changes the agent's failure shape on held-out, not its
+overall quality.** Net reward (v0 30% vs v2 35%) is within noise
+at n=20. But v2 wins precisely the held-out tasks v0 fails (4 of
+the 5 v2 held-out passes are tasks v0 didn't pass) and loses some
+dev tasks v0 passes. The agent changed character. That's a
+direction the framework surfaces — even when the headline number
+looks flat.
 
-**2. Argument-correctness is the dominant failure mode.** Most
-agent failures are arithmetic — wrong payment splits, gift-card
-balance shortfalls, invented user_ids. Our deterministic check
-flags these directly via τ³-bench's `ToolMessage.error: bool`.
-Without this dimension we would have attributed many failures to
-"policy compliance" or "information grounding" and looked for the
-wrong fixes.
+**2. The dimensions don't fully explain the held-out reward shift,
+and the framework makes that visible.** Task-level audit:
 
-**3. One LLM judge was provably worse than a 10-line Python check.**
-For `confirmation_discipline`, an LLM judge gave 0% pass rate (it
-always found something to flag). A Python check ("did the user's
-most-recent unconsumed turn contain an affirmative before each
-mutating tool call?") gave 70%. We replaced the LLM judge with the
-Python check. The fix held across both the original τ-bench and
-τ³-bench iterations — the LLM judge was structurally wrong, not
-just badly tuned.
+| v2 win | split | v0 termination | v2 termination | dimensions that improved (v0 F → v2 P) |
+|---|---|---|---|---|
+| task 6 | held | max_steps | transfer | confirmation, info_grounding, tool_arg |
+| task 16 | held | completed | completed | **none — all 6 dimensions identical** |
+| task 18 | held | completed | completed | info_grounding, tool_seq |
+| task 19 | held | max_steps | completed | **none — all 6 dimensions identical** |
+
+On 2 of 4 v2 held-out wins, our 6 dimensions report **identical
+verdicts for v0 and v2** yet the reward differs. The framework's
+per-dimension output is honest about this: it tells you when your
+taxonomy doesn't fully cover what the benchmark scores.
+
+**3. Termination kind is doing load-bearing work the dimensions
+miss.** Tasks 6 and 19 flipped from `max_steps` (v0) to a properly
+graded completion (v2). The framework tracks termination explicitly
+in every record but doesn't score it as a dimension; if it did,
+those wins would be attributed correctly. A one-score eval would
+have neither the signal nor the explanation.
+
+**4. Argument-correctness is the dominant agent-side failure mode.**
+Most agent failures are arithmetic — wrong payment splits,
+gift-card balance shortfalls, invented user_ids. The deterministic
+check reads τ³-bench's `ToolMessage.error: bool` directly. Without
+this dimension we would have attributed many failures to "policy
+compliance" or "information grounding" and looked for the wrong
+fixes.
+
+**5. One LLM judge was provably worse than a 10-line Python check.**
+For `confirmation_discipline`, an LLM judge gave 0% pass rate. A
+Python check ("did the user's most-recent unconsumed turn contain
+an affirmative before each mutating tool call?") gave 70%. We
+replaced the LLM judge. The fix held across both the original
+τ-bench and τ³-bench iterations — the LLM judge was structurally
+wrong, not just badly tuned.
 
 ---
 
@@ -309,19 +349,25 @@ infrastructure exists; the review is a single mechanical pass.
 
 ### 4.3 Coverage gaps
 
-**Evidence:** `tool_sequence_correctness` has the highest FP rate
-of any dimension (9 of 20 disagreements). Looking inside, the
-pattern is consistent: the agent's call ordering was correct, but
-the task failed for a different reason the dimension does not
-score (wrong flight number, wrong cabin, wrong payment split).
+**Evidence A** — `tool_sequence_correctness` has the highest FP
+rate of any dimension (9 of 20 disagreements). The agent's call
+ordering is correct but the task fails for a different reason the
+dimension does not score (wrong flight number, wrong cabin, wrong
+payment split).
 
-**Implication:** this is **coverage**, not a bug. The deterministic
-check correctly guarantees what it claims to guarantee and nothing
-more. If we want it to catch more, we write more deterministic
-checks (e.g., "the `cabin` argument to `book_reservation` matches a
-user-stated preference in an earlier turn"). The architecture is
-ready for them — each new check is one function appended to
-`ALL_JUDGES`.
+**Evidence B** — on 2 of 4 held-out tasks v2 wins (16 and 19),
+every dimension's verdict is identical to v0's. Reward flips
+without any dimensional movement. The benchmark's
+`db_check + env_assertions + action_checks + nl_assertions +
+communicate_checks` ensemble scores things our 6 dimensions don't.
+
+**Implication:** **coverage, not a bug.** The deterministic checks
+correctly guarantee what they claim to guarantee and nothing more.
+The honest fix is more dimensions — argument-choice correctness
+(catches "right tool, wrong specific argument"), a termination-kind
+dimension (catches max_steps vs completed differences), and
+sub-checks that mirror τ³-bench's reward composition. Each is one
+function in `ALL_JUDGES`. The framework is built to grow.
 
 ### 4.4 What the framework caught about benchmarks
 
