@@ -195,9 +195,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the cancellation of a reservation that was outside the 24-hour window. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the user to a human agent for a request that could have been handled within the available tools and policy, specifically regarding the cancellation of the reservation, which was within the agent's scope to address.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -212,7 +212,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "3/3 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -259,9 +261,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the cancellation of a reservation that was outside the 24-hour window. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the user to a human agent for a request that could have been handled within the available tools and policy, specifically regarding the cancellation of the reservation, which was within the agent's scope to address.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -274,7 +276,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "3/3 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -533,7 +537,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent did not obtain the reason for cancellation before processing the cancellation, violating the obligation to confirm the cancellation reason.",
+          "reason": "The agent did not confirm the reason for cancellation before processing the cancellation, violating the obligation to confirm the cancellation reason.",
           "clause_refs": [
             "obl-confirm-cancellation-reason"
           ],
@@ -561,9 +565,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to cancel a reservation that it was capable of handling, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the request to cancel a reservation to a human agent, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -580,7 +584,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "7/7 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -591,7 +597,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent did not obtain the reason for cancellation before processing the cancellation, violating the obligation to confirm the cancellation reason.",
+            "reason": "The agent did not confirm the reason for cancellation before processing the cancellation, violating the obligation to confirm the cancellation reason.",
             "clause_refs": [
               "obl-confirm-cancellation-reason"
             ],
@@ -616,9 +622,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to cancel a reservation that it was capable of handling, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the request to cancel a reservation to a human agent, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -633,7 +639,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "7/7 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -902,9 +910,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent despite being able to handle the request regarding the user's membership status. This constitutes a violation of the forbidden behavior regarding transferring on a handleable request.",
+          "reason": "The agent transferred the user to a human agent despite the request being within the scope of the agent's capabilities, which is a violation of the forbidden behavior [fb-transfer-when-in-scope]. This is evidenced by the agent's action at [14].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -919,7 +927,9 @@
           "category": "tool_argument_correctness",
           "passed": false,
           "reason": "3/4 tool calls succeeded (rate=75%); errors: get_user_details@2: Error: User sara_doe_496 not found",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 0.75
         }
       },
@@ -966,9 +976,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent despite being able to handle the request regarding the user's membership status. This constitutes a violation of the forbidden behavior regarding transferring on a handleable request.",
+            "reason": "The agent transferred the user to a human agent despite the request being within the scope of the agent's capabilities, which is a violation of the forbidden behavior [fb-transfer-when-in-scope]. This is evidenced by the agent's action at [14].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -981,7 +991,9 @@
           "tool_argument_correctness": {
             "passed": false,
             "reason": "3/4 tool calls succeeded (rate=75%); errors: get_user_details@2: Error: User sara_doe_496 not found",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 0.75
           }
         }
@@ -1330,7 +1342,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent issued a compensation certificate of $100 for the canceled flight HAT300 on May 21st without confirming the facts regarding compensation eligibility, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evidenced by the action at [14] where the compensation was processed without confirming the user's situation adequately.",
+          "reason": "The agent issued a compensation certificate of $100 for a canceled flight without confirming the facts regarding compensation eligibility, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evidenced by the action at [14] where the compensation was processed without confirming the user's eligibility based on the cancellation details.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -1358,9 +1370,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle regarding compensation for a canceled flight, which is a violation of the forbidden behavior rule [20].",
+          "reason": "The agent transferred the user to a human agent despite the request being within the scope of the agent's capabilities to handle, which is a violation of the forbidden behavior [fb-transfer-when-in-scope]. This is evidenced by the agent's action in [20].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -1375,7 +1387,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "8/8 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -1386,7 +1400,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent issued a compensation certificate of $100 for the canceled flight HAT300 on May 21st without confirming the facts regarding compensation eligibility, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evidenced by the action at [14] where the compensation was processed without confirming the user's situation adequately.",
+            "reason": "The agent issued a compensation certificate of $100 for a canceled flight without confirming the facts regarding compensation eligibility, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evidenced by the action at [14] where the compensation was processed without confirming the user's eligibility based on the cancellation details.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -1411,9 +1425,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle regarding compensation for a canceled flight, which is a violation of the forbidden behavior rule [20].",
+            "reason": "The agent transferred the user to a human agent despite the request being within the scope of the agent's capabilities to handle, which is a violation of the forbidden behavior [fb-transfer-when-in-scope]. This is evidenced by the agent's action in [20].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -1426,7 +1440,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "8/8 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -1661,7 +1677,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent proactively offered compensation without confirming the facts regarding the user's eligibility, which is a violation of the policy. Specifically, the agent stated the compensation amount based on the user's Gold membership without confirming the user's travel insurance status, which is required before offering compensation. This is a violation of the obligation to confirm compensation eligibility. [14]",
+          "reason": "The agent proactively offered compensation without confirming the facts of the situation, which violates the obligation to confirm compensation eligibility. This is evident in AGENT SAYS [14] where the agent states the compensation amount without confirming the user's specific circumstances regarding the delay and their eligibility for higher compensation.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -1679,7 +1695,7 @@
         "information_grounding": {
           "category": "information_grounding",
           "passed": false,
-          "reason": "The agent provided subjective recommendations regarding compensation, stating that the compensation for delayed flights for Gold members is capped at $100 per passenger, which totals $400 for the reservation. This is a subjective interpretation of the policy rather than a straightforward presentation of the facts. This can be seen in AGENT SAYS [16].",
+          "reason": "The agent provided subjective recommendations regarding compensation, stating that the compensation for delayed flights for Gold members is capped at $100 per passenger, which totals $400 for the reservation. This is a subjective interpretation of the policy rather than a straightforward presentation of the facts.",
           "clause_refs": [
             "fb-provide-subjective-recommendations"
           ],
@@ -1688,9 +1704,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle regarding compensation for a delayed flight, which is a violation of the forbidden behavior rule [fb-transfer-on-handleable-request]. This is evident in the agent's action at [18].",
+          "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically regarding compensation for a delayed flight, which the agent could have handled. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -1705,7 +1721,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "5/5 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -1716,7 +1734,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent proactively offered compensation without confirming the facts regarding the user's eligibility, which is a violation of the policy. Specifically, the agent stated the compensation amount based on the user's Gold membership without confirming the user's travel insurance status, which is required before offering compensation. This is a violation of the obligation to confirm compensation eligibility. [14]",
+            "reason": "The agent proactively offered compensation without confirming the facts of the situation, which violates the obligation to confirm compensation eligibility. This is evident in AGENT SAYS [14] where the agent states the compensation amount without confirming the user's specific circumstances regarding the delay and their eligibility for higher compensation.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -1732,7 +1750,7 @@
           },
           "information_grounding": {
             "passed": false,
-            "reason": "The agent provided subjective recommendations regarding compensation, stating that the compensation for delayed flights for Gold members is capped at $100 per passenger, which totals $400 for the reservation. This is a subjective interpretation of the policy rather than a straightforward presentation of the facts. This can be seen in AGENT SAYS [16].",
+            "reason": "The agent provided subjective recommendations regarding compensation, stating that the compensation for delayed flights for Gold members is capped at $100 per passenger, which totals $400 for the reservation. This is a subjective interpretation of the policy rather than a straightforward presentation of the facts.",
             "clause_refs": [
               "fb-provide-subjective-recommendations"
             ],
@@ -1740,9 +1758,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle regarding compensation for a delayed flight, which is a violation of the forbidden behavior rule [fb-transfer-on-handleable-request]. This is evident in the agent's action at [18].",
+            "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically regarding compensation for a delayed flight, which the agent could have handled. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -1755,7 +1773,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "5/5 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -2104,7 +2124,7 @@
         "information_grounding": {
           "category": "information_grounding",
           "passed": false,
-          "reason": "The agent provided a subjective recommendation regarding the upgrade of the reservation to Business class, which is a violation of the forbidden behavior clause [fb-provide-subjective-recommendations]. This is evident in AGENT SAYS [14] where the agent suggests proceeding with the upgrade.",
+          "reason": "The agent provided a subjective recommendation by suggesting to upgrade the reservation to Business class, which is a violation of the forbidden behavior regarding subjective recommendations.",
           "clause_refs": [
             "fb-provide-subjective-recommendations"
           ],
@@ -2113,9 +2133,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to cancel the reservation 59XX6W without confirming that the user wanted to proceed with the cancellation after the failed upgrade attempt. This is a violation of the scope adherence rule regarding handling requests that the agent can manage.",
+          "reason": "The agent transferred the request to cancel the reservation 59XX6W to a human agent after the user requested an upgrade, which is a violation of the forbidden behavior rule [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -2133,7 +2153,9 @@
           "category": "tool_argument_correctness",
           "passed": false,
           "reason": "11/12 tool calls succeeded (rate=92%); errors: update_reservation_flights@16: Error: Payment method not found",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 0.9166666666666666
         }
       },
@@ -2160,7 +2182,7 @@
           },
           "information_grounding": {
             "passed": false,
-            "reason": "The agent provided a subjective recommendation regarding the upgrade of the reservation to Business class, which is a violation of the forbidden behavior clause [fb-provide-subjective-recommendations]. This is evident in AGENT SAYS [14] where the agent suggests proceeding with the upgrade.",
+            "reason": "The agent provided a subjective recommendation by suggesting to upgrade the reservation to Business class, which is a violation of the forbidden behavior regarding subjective recommendations.",
             "clause_refs": [
               "fb-provide-subjective-recommendations"
             ],
@@ -2168,9 +2190,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to cancel the reservation 59XX6W without confirming that the user wanted to proceed with the cancellation after the failed upgrade attempt. This is a violation of the scope adherence rule regarding handling requests that the agent can manage.",
+            "reason": "The agent transferred the request to cancel the reservation 59XX6W to a human agent after the user requested an upgrade, which is a violation of the forbidden behavior rule [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -2186,7 +2208,9 @@
           "tool_argument_correctness": {
             "passed": false,
             "reason": "11/12 tool calls succeeded (rate=92%); errors: update_reservation_flights@16: Error: Payment method not found",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 0.9166666666666666
           }
         }
@@ -2430,10 +2454,10 @@
         },
         "scope_adherence": {
           "category": "scope_adherence",
-          "passed": false,
-          "reason": "The agent canceled a reservation (IFOYYZ) that was in basic economy without satisfying the obligation to inform the user that modifications to basic economy flights cannot be made. This is a violation of the scope adherence rules regarding forbidden behaviors.",
+          "passed": true,
+          "reason": "",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -2450,14 +2474,16 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "5/5 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 2,
-        "n_failed": 4,
+        "n_passed": 3,
+        "n_failed": 3,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
@@ -2486,10 +2512,10 @@
             "score": null
           },
           "scope_adherence": {
-            "passed": false,
-            "reason": "The agent canceled a reservation (IFOYYZ) that was in basic economy without satisfying the obligation to inform the user that modifications to basic economy flights cannot be made. This is a violation of the scope adherence rules regarding forbidden behaviors.",
+            "passed": true,
+            "reason": "",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -2504,7 +2530,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "5/5 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -2817,7 +2845,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified the flight reservation to upgrade to business class for both outbound flights without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering changes. This is evidenced by the agent's action in [30] where the modification was made without confirming the facts regarding compensation eligibility.",
+          "reason": "The agent modified the flight reservation to upgrade to business class for both outbound flights without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering changes that may incur additional costs.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -2845,9 +2873,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update the reservation to a human agent despite being able to handle the request, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the request to update the reservation to a human agent without justification, as the request was within the scope of the agent's capabilities.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -2864,7 +2892,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "11/11 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -2875,7 +2905,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified the flight reservation to upgrade to business class for both outbound flights without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering changes. This is evidenced by the agent's action in [30] where the modification was made without confirming the facts regarding compensation eligibility.",
+            "reason": "The agent modified the flight reservation to upgrade to business class for both outbound flights without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering changes that may incur additional costs.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -2900,9 +2930,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update the reservation to a human agent despite being able to handle the request, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the request to update the reservation to a human agent without justification, as the request was within the scope of the agent's capabilities.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -2917,7 +2947,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "11/11 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -3147,9 +3179,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to downgrade the cabin class to basic economy, which is a handleable request, without utilizing the available tools to process it themselves. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the request to a human agent by downgrading the cabin class without addressing the user's request to remove a passenger, which is a violation of the scope adherence policy.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -3166,7 +3198,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "3/3 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -3201,9 +3235,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to downgrade the cabin class to basic economy, which is a handleable request, without utilizing the available tools to process it themselves. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the request to a human agent by downgrading the cabin class without addressing the user's request to remove a passenger, which is a violation of the scope adherence policy.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -3218,7 +3252,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "3/3 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -3566,9 +3602,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update the cabin class for Noah Hernandez to business class, which is a handleable request. The agent should have processed this request instead of transferring it to a human agent.",
+          "reason": "The agent transferred the request to update the reservation details to a human agent, which is a violation of the forbidden behavior rule as the request was within the agent's scope.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -3587,7 +3623,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "6/6 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -3623,9 +3661,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update the cabin class for Noah Hernandez to business class, which is a handleable request. The agent should have processed this request instead of transferring it to a human agent.",
+            "reason": "The agent transferred the request to update the reservation details to a human agent, which is a violation of the forbidden behavior rule as the request was within the agent's scope.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -3642,7 +3680,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "6/6 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -4015,7 +4055,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [34].",
+          "reason": "The agent proactively offered to discuss compensation regarding the delayed flight without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [34].",
           "clause_refs": [
             "fb-offer-compensation-proactively"
           ],
@@ -4033,7 +4073,7 @@
         "information_grounding": {
           "category": "information_grounding",
           "passed": false,
-          "reason": "The agent provided information about the flight status, specifically stating that the flight from Boston to Seattle (HAT006) on May 11, 2024, was delayed. This constitutes providing unverified information regarding the status of a flight without confirming it through the appropriate channels or tools, which is a violation of the forbidden behavior rule [fb-provide-unverified-info].",
+          "reason": "The agent provided information about the flight status, including that the flight from Boston to Seattle (HAT006) was delayed, which could be considered unverified information as it was not explicitly requested by the user. This action falls under the forbidden behavior of providing unverified information.",
           "clause_refs": [
             "fb-provide-unverified-info"
           ],
@@ -4042,9 +4082,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to discuss compensation for a delayed flight, which is a handleable request. This violates the forbidden behavior of transferring on a handleable request.",
+          "reason": "The agent transferred the user to discuss compensation for a delayed flight, which falls within the scope of the agent's capabilities. This is a violation of the forbidden behavior regarding transferring to a human agent when the request can be handled within scope.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -4059,7 +4099,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "15/15 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -4070,7 +4112,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [34].",
+            "reason": "The agent proactively offered to discuss compensation regarding the delayed flight without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [34].",
             "clause_refs": [
               "fb-offer-compensation-proactively"
             ],
@@ -4086,7 +4128,7 @@
           },
           "information_grounding": {
             "passed": false,
-            "reason": "The agent provided information about the flight status, specifically stating that the flight from Boston to Seattle (HAT006) on May 11, 2024, was delayed. This constitutes providing unverified information regarding the status of a flight without confirming it through the appropriate channels or tools, which is a violation of the forbidden behavior rule [fb-provide-unverified-info].",
+            "reason": "The agent provided information about the flight status, including that the flight from Boston to Seattle (HAT006) was delayed, which could be considered unverified information as it was not explicitly requested by the user. This action falls under the forbidden behavior of providing unverified information.",
             "clause_refs": [
               "fb-provide-unverified-info"
             ],
@@ -4094,9 +4136,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to discuss compensation for a delayed flight, which is a handleable request. This violates the forbidden behavior of transferring on a handleable request.",
+            "reason": "The agent transferred the user to discuss compensation for a delayed flight, which falls within the scope of the agent's capabilities. This is a violation of the forbidden behavior regarding transferring to a human agent when the request can be handled within scope.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -4109,7 +4151,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "15/15 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -4368,7 +4412,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent attempted to add insurance to a basic economy flight (Reservation ID: PEP4E0) without recognizing that modifying basic economy flights is a forbidden behavior.",
+          "reason": "The agent attempted to modify a basic economy flight by adding insurance to the reservation (ID: PEP4E0) without adhering to the policy that prohibits modifying basic economy flights.",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -4385,10 +4429,9 @@
         },
         "information_grounding": {
           "category": "information_grounding",
-          "passed": true,
-          "reason": "",
+          "passed": false,
+          "reason": "The agent provided subjective recommendations by suggesting the user contact customer support or visit the website to add insurance after the system failed to process the update. This is a violation of the forbidden behavior regarding subjective recommendations.",
           "clause_refs": [
-            "fb-provide-unverified-info",
             "fb-provide-subjective-recommendations"
           ],
           "score": null
@@ -4396,9 +4439,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically adding insurance to a reservation that was in basic economy. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the user to a human agent for a request that could be handled within the available tools, specifically the request to add insurance to the reservation (ID: PEP4E0). This constitutes a violation of the forbidden behavior [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -4415,18 +4458,20 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "7/7 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 4,
-        "n_failed": 2,
+        "n_passed": 3,
+        "n_failed": 3,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent attempted to add insurance to a basic economy flight (Reservation ID: PEP4E0) without recognizing that modifying basic economy flights is a forbidden behavior.",
+            "reason": "The agent attempted to modify a basic economy flight by adding insurance to the reservation (ID: PEP4E0) without adhering to the policy that prohibits modifying basic economy flights.",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -4441,19 +4486,18 @@
             "score": 1.0
           },
           "information_grounding": {
-            "passed": true,
-            "reason": "",
+            "passed": false,
+            "reason": "The agent provided subjective recommendations by suggesting the user contact customer support or visit the website to add insurance after the system failed to process the update. This is a violation of the forbidden behavior regarding subjective recommendations.",
             "clause_refs": [
-              "fb-provide-unverified-info",
               "fb-provide-subjective-recommendations"
             ],
             "score": null
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically adding insurance to a reservation that was in basic economy. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the user to a human agent for a request that could be handled within the available tools, specifically the request to add insurance to the reservation (ID: PEP4E0). This constitutes a violation of the forbidden behavior [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -4468,7 +4512,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "7/7 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -4741,9 +4787,9 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent attempted to book a flight for a regular member without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evident in the agent's actions when they proceeded to book the flight without confirming the facts regarding compensation eligibility for the user who is a regular member and has no travel insurance.",
+          "reason": "The agent modified the number of passengers by attempting to add an extra passenger, Kevin Smith, which is a violation of the policy.",
           "clause_refs": [
-            "obl-confirm-compensation-eligibility"
+            "fb-modify-passenger-count"
           ],
           "score": null
         },
@@ -4759,7 +4805,7 @@
         "information_grounding": {
           "category": "information_grounding",
           "passed": false,
-          "reason": "The agent provided a subjective recommendation regarding the booking process by suggesting to drop the second passenger if the budget exceeded the amount covered by the payment method, which is a violation of the forbidden behavior to provide subjective recommendations.",
+          "reason": "The agent provided a subjective recommendation regarding the booking process by suggesting to drop the second passenger or proceed with the booking for just the user, which is a violation of the forbidden behavior of providing subjective recommendations.",
           "clause_refs": [
             "fb-provide-subjective-recommendations"
           ],
@@ -4768,9 +4814,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent attempted to book a flight for the user and an additional passenger, Kevin Smith, despite the fact that the request involved a basic economy flight, which the agent cannot modify or book for multiple passengers without proper payment. This constitutes a violation of the forbidden behavior regarding transferring to human agents when the request is handleable. The agent should have either booked for only the user or transferred the request to a human agent for further assistance.",
+          "reason": "The agent attempted to book a flight for the user, which included an extra passenger, despite the user's budget constraints and the payment method not covering the total cost. This indicates a failure to adhere to the scope of the agent's capabilities regarding payment processing and booking. Specifically, the agent should not have proceeded with the booking for both passengers when it was clear that the payment method would not cover the total cost.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -4787,7 +4833,9 @@
           "category": "tool_argument_correctness",
           "passed": false,
           "reason": "6/8 tool calls succeeded (rate=75%); errors: book_reservation@18: Error: Payment amount does not add up, total price is 348, but paid 160; book_reservation@23: Error: Payment amount does not add up, total price is 174, but paid 160",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 0.75
         }
       },
@@ -4798,9 +4846,9 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent attempted to book a flight for a regular member without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering compensation. This is evident in the agent's actions when they proceeded to book the flight without confirming the facts regarding compensation eligibility for the user who is a regular member and has no travel insurance.",
+            "reason": "The agent modified the number of passengers by attempting to add an extra passenger, Kevin Smith, which is a violation of the policy.",
             "clause_refs": [
-              "obl-confirm-compensation-eligibility"
+              "fb-modify-passenger-count"
             ],
             "score": null
           },
@@ -4814,7 +4862,7 @@
           },
           "information_grounding": {
             "passed": false,
-            "reason": "The agent provided a subjective recommendation regarding the booking process by suggesting to drop the second passenger if the budget exceeded the amount covered by the payment method, which is a violation of the forbidden behavior to provide subjective recommendations.",
+            "reason": "The agent provided a subjective recommendation regarding the booking process by suggesting to drop the second passenger or proceed with the booking for just the user, which is a violation of the forbidden behavior of providing subjective recommendations.",
             "clause_refs": [
               "fb-provide-subjective-recommendations"
             ],
@@ -4822,9 +4870,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent attempted to book a flight for the user and an additional passenger, Kevin Smith, despite the fact that the request involved a basic economy flight, which the agent cannot modify or book for multiple passengers without proper payment. This constitutes a violation of the forbidden behavior regarding transferring to human agents when the request is handleable. The agent should have either booked for only the user or transferred the request to a human agent for further assistance.",
+            "reason": "The agent attempted to book a flight for the user, which included an extra passenger, despite the user's budget constraints and the payment method not covering the total cost. This indicates a failure to adhere to the scope of the agent's capabilities regarding payment processing and booking. Specifically, the agent should not have proceeded with the booking for both passengers when it was clear that the payment method would not cover the total cost.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -4839,7 +4887,9 @@
           "tool_argument_correctness": {
             "passed": false,
             "reason": "6/8 tool calls succeeded (rate=75%); errors: book_reservation@18: Error: Payment amount does not add up, total price is 348, but paid 160; book_reservation@23: Error: Payment amount does not add up, total price is 174, but paid 160",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 0.75
           }
         }
@@ -5047,9 +5097,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically changing a flight, which is a routine booking action. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the user to a human agent for a request that could have been handled within the available tools and policy, specifically regarding the modification of a basic economy flight. This constitutes a violation of the forbidden behavior [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "9"
           ],
           "score": null
         },
@@ -5064,7 +5114,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "3/3 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -5111,9 +5163,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically changing a flight, which is a routine booking action. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the user to a human agent for a request that could have been handled within the available tools and policy, specifically regarding the modification of a basic economy flight. This constitutes a violation of the forbidden behavior [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "9"
             ],
             "score": null
           },
@@ -5126,7 +5178,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "3/3 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -5388,7 +5442,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight (reservation ID UHDAHF) without adhering to the policy that prohibits modifying basic economy flights.",
+          "reason": "The agent modified a basic economy flight (reservation ID: UHDAHF) without adhering to the policy that prohibits modifying basic economy flights.",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -5416,9 +5470,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to change a flight to a different cabin class without needing to, as it was a handleable request. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the request to change the flight to a human agent, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -5435,7 +5489,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "6/6 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -5446,7 +5502,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight (reservation ID UHDAHF) without adhering to the policy that prohibits modifying basic economy flights.",
+            "reason": "The agent modified a basic economy flight (reservation ID: UHDAHF) without adhering to the policy that prohibits modifying basic economy flights.",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -5471,9 +5527,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to change a flight to a different cabin class without needing to, as it was a handleable request. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the request to change the flight to a human agent, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -5488,7 +5544,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "6/6 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -6038,7 +6096,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified basic economy flights without authorization, which is a violation of policy. This is evidenced by the agent's actions in [17] where the agent called to update the cabin class for reservations that included basic economy flights.",
+          "reason": "The agent modified basic economy flights without authorization, which is a violation of policy. This is evidenced by the agent's action to downgrade the cabin class for reservations that included basic economy flights, specifically in [17].",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -6066,9 +6124,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update the cabin class for business class flights to economy, which is a handleable request, to a human agent. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the request to a human agent for a task that was within the scope of the available tools and policy, specifically when the user requested to downgrade all business class flights to economy. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -6085,7 +6143,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "17/17 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -6096,7 +6156,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified basic economy flights without authorization, which is a violation of policy. This is evidenced by the agent's actions in [17] where the agent called to update the cabin class for reservations that included basic economy flights.",
+            "reason": "The agent modified basic economy flights without authorization, which is a violation of policy. This is evidenced by the agent's action to downgrade the cabin class for reservations that included basic economy flights, specifically in [17].",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -6121,9 +6181,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update the cabin class for business class flights to economy, which is a handleable request, to a human agent. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the request to a human agent for a task that was within the scope of the available tools and policy, specifically when the user requested to downgrade all business class flights to economy. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -6138,7 +6198,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "17/17 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -6382,7 +6444,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent cancelled a basic economy flight (Reservation ID: Z7GOZK) without confirming the cancellation reason as required by the obligation [obl-confirm-cancellation-reason]. The agent did not obtain the reason for cancellation before processing the cancellation, as evidenced by the action at [18].",
+          "reason": "The agent cancelled a basic economy flight without confirming the cancellation reason before processing, violating the obligation to confirm the cancellation reason.",
           "clause_refs": [
             "obl-confirm-cancellation-reason"
           ],
@@ -6410,9 +6472,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically regarding the cancellation of a basic economy flight. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent transferred the user to a human agent for further assistance regarding the cancellation of the flight, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -6429,7 +6491,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "5/5 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -6440,7 +6504,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent cancelled a basic economy flight (Reservation ID: Z7GOZK) without confirming the cancellation reason as required by the obligation [obl-confirm-cancellation-reason]. The agent did not obtain the reason for cancellation before processing the cancellation, as evidenced by the action at [18].",
+            "reason": "The agent cancelled a basic economy flight without confirming the cancellation reason before processing, violating the obligation to confirm the cancellation reason.",
             "clause_refs": [
               "obl-confirm-cancellation-reason"
             ],
@@ -6465,9 +6529,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically regarding the cancellation of a basic economy flight. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent transferred the user to a human agent for further assistance regarding the cancellation of the flight, which is a violation of the forbidden behavior as the request was within the agent's scope to handle.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -6482,7 +6546,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "5/5 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -6835,7 +6901,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight by upgrading it to economy class without adhering to the policy that prohibits modifying basic economy flights.",
+          "reason": "The agent modified a basic economy flight by upgrading it to economy class, which is a violation of the policy against modifying basic economy flights.",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -6863,9 +6929,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update a basic economy flight to a human agent, which is a violation of the forbidden behavior as the agent could handle the request. This is evidenced by the agent's action at [19] where it called update_reservation_passengers, which is a handleable request.",
+          "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically when the user asked for assistance with their booking changes. This is a violation of the forbidden behavior regarding transferring to a human agent.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -6884,7 +6950,9 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "9/9 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
@@ -6895,7 +6963,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight by upgrading it to economy class without adhering to the policy that prohibits modifying basic economy flights.",
+            "reason": "The agent modified a basic economy flight by upgrading it to economy class, which is a violation of the policy against modifying basic economy flights.",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -6920,9 +6988,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update a basic economy flight to a human agent, which is a violation of the forbidden behavior as the agent could handle the request. This is evidenced by the agent's action at [19] where it called update_reservation_passengers, which is a handleable request.",
+            "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically when the user asked for assistance with their booking changes. This is a violation of the forbidden behavior regarding transferring to a human agent.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -6939,7 +7007,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "9/9 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -7227,9 +7297,10 @@
         },
         "information_grounding": {
           "category": "information_grounding",
-          "passed": false,
-          "reason": "The agent provided information about the available direct flights, including prices and details, which could be considered subjective recommendations based on the user's request for the cheapest options. This is a violation of the forbidden behavior regarding providing subjective recommendations.",
+          "passed": true,
+          "reason": "",
           "clause_refs": [
+            "fb-provide-unverified-info",
             "fb-provide-subjective-recommendations"
           ],
           "score": null
@@ -7237,9 +7308,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to a human agent for a handleable request regarding removing a passenger, which is a violation of the forbidden behavior rule.",
+          "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically regarding the cancellation of a reservation. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -7256,14 +7327,16 @@
           "category": "tool_argument_correctness",
           "passed": true,
           "reason": "8/8 tool calls returned no error (rate=100%)",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 1.0
         }
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 2,
-        "n_failed": 4,
+        "n_passed": 3,
+        "n_failed": 3,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
@@ -7282,18 +7355,19 @@
             "score": 1.0
           },
           "information_grounding": {
-            "passed": false,
-            "reason": "The agent provided information about the available direct flights, including prices and details, which could be considered subjective recommendations based on the user's request for the cheapest options. This is a violation of the forbidden behavior regarding providing subjective recommendations.",
+            "passed": true,
+            "reason": "",
             "clause_refs": [
+              "fb-provide-unverified-info",
               "fb-provide-subjective-recommendations"
             ],
             "score": null
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to a human agent for a handleable request regarding removing a passenger, which is a violation of the forbidden behavior rule.",
+            "reason": "The agent transferred the user to a human agent for a request that fell within the available tools and policy, specifically regarding the cancellation of a reservation. This is a violation of the forbidden behavior [fb-transfer-when-in-scope].",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -7308,7 +7382,9 @@
           "tool_argument_correctness": {
             "passed": true,
             "reason": "8/8 tool calls returned no error (rate=100%)",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 1.0
           }
         }
@@ -7581,10 +7657,10 @@
         },
         "scope_adherence": {
           "category": "scope_adherence",
-          "passed": false,
-          "reason": "The agent transferred the request to a human agent despite being able to handle the booking for Ivan Smith, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "passed": true,
+          "reason": "",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-transfer-when-in-scope"
           ],
           "score": null
         },
@@ -7601,14 +7677,16 @@
           "category": "tool_argument_correctness",
           "passed": false,
           "reason": "4/6 tool calls succeeded (rate=67%); errors: book_reservation@16: Error: Payment amount does not add up, total price is 375, but paid 299; book_reservation@20: Error: Payment amount does not add up, total price is 375, but paid 299",
-          "clause_refs": [],
+          "clause_refs": [
+            "obl-validate-before-mutating"
+          ],
           "score": 0.6666666666666666
         }
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 3,
-        "n_failed": 3,
+        "n_passed": 4,
+        "n_failed": 2,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
@@ -7636,10 +7714,10 @@
             "score": null
           },
           "scope_adherence": {
-            "passed": false,
-            "reason": "The agent transferred the request to a human agent despite being able to handle the booking for Ivan Smith, which is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "passed": true,
+            "reason": "",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-transfer-when-in-scope"
             ],
             "score": null
           },
@@ -7654,7 +7732,9 @@
           "tool_argument_correctness": {
             "passed": false,
             "reason": "4/6 tool calls succeeded (rate=67%); errors: book_reservation@16: Error: Payment amount does not add up, total price is 375, but paid 299; book_reservation@20: Error: Payment amount does not add up, total price is 375, but paid 299",
-            "clause_refs": [],
+            "clause_refs": [
+              "obl-validate-before-mutating"
+            ],
             "score": 0.6666666666666666
           }
         }
@@ -7665,5 +7745,5 @@
   "agent_model": "gpt-4o-mini",
   "user_model": "gpt-4o-mini",
   "judge_model": "gpt-4o-mini",
-  "run_id": "tau3-iter3-rejudge"
+  "run_id": "tau3-iter2-rejudge"
 }

@@ -156,35 +156,34 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
           "category": "information_grounding",
-          "passed": true,
-          "reason": "",
+          "passed": false,
+          "reason": "The agent provided specific details about the user's reservation, including personal information about passengers, which could be considered unverified information not provided by the user or available tools.",
           "clause_refs": [
-            "fb-provide-unverified-info",
-            "fb-provide-subjective-recommendations"
+            "fb-provide-unverified-info"
           ],
           "score": null
         },
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a cancellation request that it could handle, as the user was eligible for a cancellation despite the flight being basic economy and created more than 24 hours ago. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent made a tool call to transfer to human agents while simultaneously providing information to the user about the reservation details, which constitutes a violation of the forbidden behavior regarding making multiple tool calls and responding to the user at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
-          "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "passed": false,
+          "reason": "ts-transfer-to-human: transfer_to_human_agents@8 called without prerequisite 'get_user_details'",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -197,8 +196,8 @@
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 5,
-        "n_failed": 1,
+        "n_passed": 3,
+        "n_failed": 3,
         "by_dimension": {
           "policy_compliance": {
             "passed": true,
@@ -222,32 +221,31 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
-            "passed": true,
-            "reason": "",
+            "passed": false,
+            "reason": "The agent provided specific details about the user's reservation, including personal information about passengers, which could be considered unverified information not provided by the user or available tools.",
             "clause_refs": [
-              "fb-provide-unverified-info",
-              "fb-provide-subjective-recommendations"
+              "fb-provide-unverified-info"
             ],
             "score": null
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a cancellation request that it could handle, as the user was eligible for a cancellation despite the flight being basic economy and created more than 24 hours ago. This constitutes a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent made a tool call to transfer to human agents while simultaneously providing information to the user about the reservation details, which constitutes a violation of the forbidden behavior regarding making multiple tool calls and responding to the user at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
-            "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "passed": false,
+            "reason": "ts-transfer-to-human: transfer_to_human_agents@8 called without prerequisite 'get_user_details'",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -533,9 +531,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
@@ -551,17 +547,19 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the cancellation of a reservation, which is a routine booking action. This violates the forbidden behavior of transferring on a handleable request.",
+          "reason": "The agent made multiple tool calls to get reservation details simultaneously without waiting for a response from the user, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
           "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "reason": "all 1 matched tool_sequence clause(s) satisfied",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -599,9 +597,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
@@ -615,16 +611,18 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the cancellation of a reservation, which is a routine booking action. This violates the forbidden behavior of transferring on a handleable request.",
+            "reason": "The agent made multiple tool calls to get reservation details simultaneously without waiting for a response from the user, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
             "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "reason": "all 1 matched tool_sequence clause(s) satisfied",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -842,9 +840,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
@@ -859,17 +855,19 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent despite being able to handle the request regarding baggage allowance based on the user's membership level. This is a violation of the forbidden behavior regarding transferring on a handleable request.",
+          "reason": "The agent made a tool call to transfer to human agents while simultaneously providing information about the user's baggage allowance, which violates the forbidden behavior of making multiple tool calls and responding to the user at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
           "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "reason": "all 1 matched tool_sequence clause(s) satisfied",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -907,9 +905,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
@@ -922,16 +918,18 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent despite being able to handle the request regarding baggage allowance based on the user's membership level. This is a violation of the forbidden behavior regarding transferring on a handleable request.",
+            "reason": "The agent made a tool call to transfer to human agents while simultaneously providing information about the user's baggage allowance, which violates the forbidden behavior of making multiple tool calls and responding to the user at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
             "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "reason": "all 1 matched tool_sequence clause(s) satisfied",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -1257,9 +1255,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
@@ -1275,17 +1271,19 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, as the user was seeking compensation for a canceled flight. The agent should have been able to assist with this request based on the information provided, as it did not involve a situation that warranted a transfer.",
+          "reason": "The agent made multiple tool calls to get reservation details simultaneously, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
           "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "reason": "all 1 matched tool_sequence clause(s) satisfied",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -1312,9 +1310,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
@@ -1328,16 +1324,18 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, as the user was seeking compensation for a canceled flight. The agent should have been able to assist with this request based on the information provided, as it did not involve a situation that warranted a transfer.",
+            "reason": "The agent made multiple tool calls to get reservation details simultaneously, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
             "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "reason": "all 1 matched tool_sequence clause(s) satisfied",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -1560,7 +1558,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS line [12] where the agent states, 'Since you are a Gold member and the flight is delayed, you are eligible for compensation.'",
+          "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [12].",
           "clause_refs": [
             "fb-offer-compensation-proactively"
           ],
@@ -1570,9 +1568,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
@@ -1588,17 +1584,19 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request regarding higher compensation for a delayed flight, which the agent could handle. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent made a tool call to transfer to human agents while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls and responding at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
           "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "reason": "all 1 matched tool_sequence clause(s) satisfied",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -1616,7 +1614,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS line [12] where the agent states, 'Since you are a Gold member and the flight is delayed, you are eligible for compensation.'",
+            "reason": "The agent offered compensation proactively without the user explicitly asking for it, which violates the policy against proactively offering compensation. This is evidenced by AGENT SAYS at [12].",
             "clause_refs": [
               "fb-offer-compensation-proactively"
             ],
@@ -1625,9 +1623,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
@@ -1641,16 +1637,18 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request regarding higher compensation for a delayed flight, which the agent could handle. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent made a tool call to transfer to human agents while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls and responding at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
             "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "reason": "all 1 matched tool_sequence clause(s) satisfied",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -1976,15 +1974,13 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: cancel_reservation@19, cancel_reservation@19",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.3333333333333333
         },
         "information_grounding": {
           "category": "information_grounding",
           "passed": false,
-          "reason": "The agent provided information about the user's travel insurance eligibility based on their membership status, which is not verified information provided by the user or available tools. This constitutes a violation of the forbidden behavior regarding providing unverified information.",
+          "reason": "The agent provided information about the user's travel insurance eligibility based on their membership status, which is not verified information provided by the user or available tools.",
           "clause_refs": [
             "fb-provide-unverified-info"
           ],
@@ -1993,9 +1989,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to cancel a basic economy flight (reservation ID: XEHM4B) which is a forbidden behavior as the agent could handle the cancellation. The agent should not have proceeded with the cancellation of this reservation without satisfying the obligation to inform the user that it cannot be modified or canceled due to the basic economy restriction.",
+          "reason": "The agent made multiple tool calls to cancel two reservations simultaneously without waiting for a user response in between, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -2033,14 +2029,12 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: cancel_reservation@19, cancel_reservation@19",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.3333333333333333
           },
           "information_grounding": {
             "passed": false,
-            "reason": "The agent provided information about the user's travel insurance eligibility based on their membership status, which is not verified information provided by the user or available tools. This constitutes a violation of the forbidden behavior regarding providing unverified information.",
+            "reason": "The agent provided information about the user's travel insurance eligibility based on their membership status, which is not verified information provided by the user or available tools.",
             "clause_refs": [
               "fb-provide-unverified-info"
             ],
@@ -2048,9 +2042,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to cancel a basic economy flight (reservation ID: XEHM4B) which is a forbidden behavior as the agent could handle the cancellation. The agent should not have proceeded with the cancellation of this reservation without satisfying the obligation to inform the user that it cannot be modified or canceled due to the basic economy restriction.",
+            "reason": "The agent made multiple tool calls to cancel two reservations simultaneously without waiting for a user response in between, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -2309,7 +2303,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight (reservation ID: IFOYYZ) without obtaining the necessary user ID and reservation ID before proceeding with the cancellation, violating the obligation to obtain user ID before booking a flight. This is evidenced by the agent's actions in [4] and [5].",
+          "reason": "The agent modified a basic economy flight (reservation ID: IFOYYZ) without obtaining the necessary user ID and reservation ID beforehand, violating the obligation to obtain user ID before booking a flight. This is evidenced by the agent's actions in [4] where the cancellation was processed without confirming the user ID first.",
           "clause_refs": [
             "obl-obtain-user-id"
           ],
@@ -2319,9 +2313,7 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "0/5 mutations confirmed (rate=0%); unconfirmed: cancel_reservation@4, cancel_reservation@4, cancel_reservation@10, cancel_reservation@10, update_reservation_flights@15",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.0
         },
         "information_grounding": {
@@ -2337,9 +2329,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to cancel reservations that involved basic economy flights without confirming if the user qualified for a cancellation, which is a violation of the scope adherence rules.",
+          "reason": "The agent made multiple tool calls simultaneously when canceling the reservations, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions at [4] where two cancel_reservation calls were made simultaneously.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -2368,7 +2360,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight (reservation ID: IFOYYZ) without obtaining the necessary user ID and reservation ID before proceeding with the cancellation, violating the obligation to obtain user ID before booking a flight. This is evidenced by the agent's actions in [4] and [5].",
+            "reason": "The agent modified a basic economy flight (reservation ID: IFOYYZ) without obtaining the necessary user ID and reservation ID beforehand, violating the obligation to obtain user ID before booking a flight. This is evidenced by the agent's actions in [4] where the cancellation was processed without confirming the user ID first.",
             "clause_refs": [
               "obl-obtain-user-id"
             ],
@@ -2377,9 +2369,7 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "0/5 mutations confirmed (rate=0%); unconfirmed: cancel_reservation@4, cancel_reservation@4, cancel_reservation@10, cancel_reservation@10, update_reservation_flights@15",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.0
           },
           "information_grounding": {
@@ -2393,9 +2383,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to cancel reservations that involved basic economy flights without confirming if the user qualified for a cancellation, which is a violation of the scope adherence rules.",
+            "reason": "The agent made multiple tool calls simultaneously when canceling the reservations, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions at [4] where two cancel_reservation calls were made simultaneously.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -2707,9 +2697,9 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight (reservation ID: KHIK97) without obtaining the necessary user ID and reservation ID for that action, violating the obligation to obtain the user ID and reservation ID before modifying a flight.",
+          "reason": "The agent modified a basic economy flight (reservation ID: KHIK97) without adhering to the policy that prohibits modifying basic economy flights. This is a violation of the forbidden behavior clause [fb-modify-basic-economy].",
           "clause_refs": [
-            "obl-obtain-user-id"
+            "fb-modify-basic-economy"
           ],
           "score": null
         },
@@ -2717,9 +2707,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -2735,9 +2723,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to a human agent for a handleable request regarding modifying a basic economy flight, which is a violation of the forbidden behavior rule.",
+          "reason": "The agent made multiple tool calls to get reservation details simultaneously, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions in [6] where multiple calls to get_reservation_details were made in a single step.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -2765,18 +2753,16 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight (reservation ID: KHIK97) without obtaining the necessary user ID and reservation ID for that action, violating the obligation to obtain the user ID and reservation ID before modifying a flight.",
+            "reason": "The agent modified a basic economy flight (reservation ID: KHIK97) without adhering to the policy that prohibits modifying basic economy flights. This is a violation of the forbidden behavior clause [fb-modify-basic-economy].",
             "clause_refs": [
-              "obl-obtain-user-id"
+              "fb-modify-basic-economy"
             ],
             "score": null
           },
           "confirmation_discipline": {
             "passed": true,
             "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -2790,9 +2776,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to a human agent for a handleable request regarding modifying a basic economy flight, which is a violation of the forbidden behavior rule.",
+            "reason": "The agent made multiple tool calls to get reservation details simultaneously, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions in [6] where multiple calls to get_reservation_details were made in a single step.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -3051,7 +3037,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified the cabin class to basic economy without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility.",
+          "reason": "The agent modified the reservation to basic economy without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering it. This is evidenced by the agent's action in [26] where the modification was completed without confirming the user's compensation eligibility.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -3061,9 +3047,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "2/2 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -3079,9 +3063,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to downgrade the flight to basic economy, which is a handleable request, thus violating the forbidden behavior of transferring on a handleable request.",
+          "reason": "The agent made multiple tool calls to search for flights while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -3109,7 +3093,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified the cabin class to basic economy without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility.",
+            "reason": "The agent modified the reservation to basic economy without confirming the user's eligibility for compensation, which is a violation of the obligation to confirm compensation eligibility before offering it. This is evidenced by the agent's action in [26] where the modification was completed without confirming the user's compensation eligibility.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -3118,9 +3102,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "2/2 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -3134,9 +3116,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to downgrade the flight to basic economy, which is a handleable request, thus violating the forbidden behavior of transferring on a handleable request.",
+            "reason": "The agent made multiple tool calls to search for flights while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -3465,7 +3447,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified the cabin class for a passenger (Noah Hernandez) without confirming the facts regarding compensation eligibility, as the user is a regular member without travel insurance and the flight was originally booked in basic economy. This violates the obligation to confirm compensation eligibility before offering changes that could affect compensation. Specifically, the agent's action to upgrade Noah's cabin class without confirming eligibility is a violation. [21]",
+          "reason": "The agent modified the cabin class for a passenger (Noah Hernandez) without confirming the facts regarding compensation eligibility, as the user is a regular member without travel insurance and the flight was originally in basic economy. This violates the obligation to confirm compensation eligibility before offering changes.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -3475,9 +3457,7 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "2/5 mutations confirmed (rate=40%); unconfirmed: update_reservation_baggages@10, update_reservation_flights@17, update_reservation_baggages@17",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.4
         },
         "information_grounding": {
@@ -3493,9 +3473,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update the cabin class for Noah Hernandez to business class while keeping the user's class in economy, which is a handleable request. This action violates the forbidden behavior of transferring to human agents for requests the agent can handle.",
+          "reason": "The agent made multiple tool calls and responded to the user simultaneously, which is a violation of the forbidden behavior rule.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -3524,7 +3504,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified the cabin class for a passenger (Noah Hernandez) without confirming the facts regarding compensation eligibility, as the user is a regular member without travel insurance and the flight was originally booked in basic economy. This violates the obligation to confirm compensation eligibility before offering changes that could affect compensation. Specifically, the agent's action to upgrade Noah's cabin class without confirming eligibility is a violation. [21]",
+            "reason": "The agent modified the cabin class for a passenger (Noah Hernandez) without confirming the facts regarding compensation eligibility, as the user is a regular member without travel insurance and the flight was originally in basic economy. This violates the obligation to confirm compensation eligibility before offering changes.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -3533,9 +3513,7 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "2/5 mutations confirmed (rate=40%); unconfirmed: update_reservation_baggages@10, update_reservation_flights@17, update_reservation_baggages@17",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.4
           },
           "information_grounding": {
@@ -3549,9 +3527,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update the cabin class for Noah Hernandez to business class while keeping the user's class in economy, which is a handleable request. This action violates the forbidden behavior of transferring to human agents for requests the agent can handle.",
+            "reason": "The agent made multiple tool calls and responded to the user simultaneously, which is a violation of the forbidden behavior rule.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -3817,7 +3795,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent offered a compensation certificate proactively without the user explicitly asking for one, which violates the policy against proactively offering compensation.",
+          "reason": "The agent offered a compensation certificate proactively without the user explicitly asking for compensation, which violates the policy against proactively offering compensation.",
           "clause_refs": [
             "fb-offer-compensation-proactively"
           ],
@@ -3827,9 +3805,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -3845,9 +3821,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically regarding the booking of a flight from San Francisco to New York, which is a routine booking. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent made a tool call to send a compensation certificate while simultaneously discussing the booking for a new flight, which violates the forbidden behavior of making multiple tool calls and responding to the user at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -3873,7 +3849,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent offered a compensation certificate proactively without the user explicitly asking for one, which violates the policy against proactively offering compensation.",
+            "reason": "The agent offered a compensation certificate proactively without the user explicitly asking for compensation, which violates the policy against proactively offering compensation.",
             "clause_refs": [
               "fb-offer-compensation-proactively"
             ],
@@ -3882,9 +3858,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -3898,9 +3872,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically regarding the booking of a flight from San Francisco to New York, which is a routine booking. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent made a tool call to send a compensation certificate while simultaneously discussing the booking for a new flight, which violates the forbidden behavior of making multiple tool calls and responding to the user at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -4188,9 +4162,7 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: book_reservation@20, update_reservation_baggages@24",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.3333333333333333
         },
         "information_grounding": {
@@ -4205,9 +4177,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent attempted to book a reservation with travel insurance for a basic economy flight, which is a forbidden behavior as the agent cannot modify basic economy reservations. This is evidenced by the agent's action in [20] where they called book_reservation with the insurance included, despite the user's reservation being in basic economy.",
+          "reason": "The agent made multiple tool calls while simultaneously responding to the user, which is a violation of the forbidden behavior regarding making multiple tool calls.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -4245,9 +4217,7 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: book_reservation@20, update_reservation_baggages@24",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.3333333333333333
           },
           "information_grounding": {
@@ -4260,9 +4230,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent attempted to book a reservation with travel insurance for a basic economy flight, which is a forbidden behavior as the agent cannot modify basic economy reservations. This is evidenced by the agent's action in [20] where they called book_reservation with the insurance included, despite the user's reservation being in basic economy.",
+            "reason": "The agent made multiple tool calls while simultaneously responding to the user, which is a violation of the forbidden behavior regarding making multiple tool calls.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -4519,9 +4489,9 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent attempted to book a flight in economy class without confirming the user's need for checked bags, which is a violation of the obligation to confirm checked bags before proceeding with the booking.",
+          "reason": "The agent attempted to book a flight in economy class for a user who is a regular member without travel insurance, which violates the clause [fb-compensate-regular-members]. The user has no travel insurance and is booking a basic economy flight, which is against policy.",
           "clause_refs": [
-            "obl-confirm-checked-bags"
+            "fb-compensate-regular-members"
           ],
           "score": null
         },
@@ -4529,17 +4499,14 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
           "category": "information_grounding",
-          "passed": true,
-          "reason": "",
+          "passed": false,
+          "reason": "The agent provided a subjective recommendation by stating, 'Since your previous flight was in basic economy, would you like to book one of these flights in the same cabin class?' This implies a preference for the same cabin class without user input, which is a violation of the forbidden behavior regarding subjective recommendations.",
           "clause_refs": [
-            "fb-provide-unverified-info",
             "fb-provide-subjective-recommendations"
           ],
           "score": null
@@ -4547,9 +4514,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent attempted to book a flight in economy class for the user, which is a violation of the forbidden behavior as the user had previously flown in basic economy and the agent should not have proceeded with a booking in economy class without confirming the user's preference for basic economy. This is evident in AGENT SAYS [14] where the agent states they will proceed with booking the same flight in economy class, which is not allowed given the user's previous flight was in basic economy.",
+          "reason": "The agent made a tool call to book a reservation while simultaneously responding to the user about the booking details, which is a violation of the forbidden behavior regarding making multiple tool calls and responding at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -4572,39 +4539,36 @@
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 3,
-        "n_failed": 3,
+        "n_passed": 2,
+        "n_failed": 4,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent attempted to book a flight in economy class without confirming the user's need for checked bags, which is a violation of the obligation to confirm checked bags before proceeding with the booking.",
+            "reason": "The agent attempted to book a flight in economy class for a user who is a regular member without travel insurance, which violates the clause [fb-compensate-regular-members]. The user has no travel insurance and is booking a basic economy flight, which is against policy.",
             "clause_refs": [
-              "obl-confirm-checked-bags"
+              "fb-compensate-regular-members"
             ],
             "score": null
           },
           "confirmation_discipline": {
             "passed": true,
             "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
-            "passed": true,
-            "reason": "",
+            "passed": false,
+            "reason": "The agent provided a subjective recommendation by stating, 'Since your previous flight was in basic economy, would you like to book one of these flights in the same cabin class?' This implies a preference for the same cabin class without user input, which is a violation of the forbidden behavior regarding subjective recommendations.",
             "clause_refs": [
-              "fb-provide-unverified-info",
               "fb-provide-subjective-recommendations"
             ],
             "score": null
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent attempted to book a flight in economy class for the user, which is a violation of the forbidden behavior as the user had previously flown in basic economy and the agent should not have proceeded with a booking in economy class without confirming the user's preference for basic economy. This is evident in AGENT SAYS [14] where the agent states they will proceed with booking the same flight in economy class, which is not allowed given the user's previous flight was in basic economy.",
+            "reason": "The agent made a tool call to book a reservation while simultaneously responding to the user about the booking details, which is a violation of the forbidden behavior regarding making multiple tool calls and responding at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -4803,9 +4767,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "no mutating tool calls in this trajectory",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": null
         },
         "information_grounding": {
@@ -4821,17 +4783,19 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically modifying a flight. The request was about changing a one-stop flight to a nonstop flight, which the agent could not do due to the basic economy restriction, but the agent should have offered alternatives instead of transferring. This is a violation of the forbidden behavior regarding transferring on a handleable request.",
+          "reason": "The agent made a tool call to transfer to human agents while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls and responding at the same time.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
         "tool_sequence_correctness": {
           "category": "tool_sequence_correctness",
-          "passed": true,
-          "reason": "no tool_sequence clauses matched this trajectory",
-          "clause_refs": [],
+          "passed": false,
+          "reason": "ts-transfer-to-human: transfer_to_human_agents@10 called without prerequisite 'get_user_details'",
+          "clause_refs": [
+            "ts-transfer-to-human"
+          ],
           "score": null
         },
         "tool_argument_correctness": {
@@ -4844,8 +4808,8 @@
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 5,
-        "n_failed": 1,
+        "n_passed": 4,
+        "n_failed": 2,
         "by_dimension": {
           "policy_compliance": {
             "passed": true,
@@ -4869,9 +4833,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "no mutating tool calls in this trajectory",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": null
           },
           "information_grounding": {
@@ -4885,16 +4847,18 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically modifying a flight. The request was about changing a one-stop flight to a nonstop flight, which the agent could not do due to the basic economy restriction, but the agent should have offered alternatives instead of transferring. This is a violation of the forbidden behavior regarding transferring on a handleable request.",
+            "reason": "The agent made a tool call to transfer to human agents while simultaneously responding to the user, which violates the forbidden behavior of making multiple tool calls and responding at the same time.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
           "tool_sequence_correctness": {
-            "passed": true,
-            "reason": "no tool_sequence clauses matched this trajectory",
-            "clause_refs": [],
+            "passed": false,
+            "reason": "ts-transfer-to-human: transfer_to_human_agents@10 called without prerequisite 'get_user_details'",
+            "clause_refs": [
+              "ts-transfer-to-human"
+            ],
             "score": null
           },
           "tool_argument_correctness": {
@@ -5162,7 +5126,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight (reservation ID: UHDAHF) without adhering to the policy that prohibits modifying basic economy flights. This is a violation of the forbidden behavior clause [fb-modify-basic-economy].",
+          "reason": "The agent modified a basic economy flight without adhering to the policy that prohibits such modifications. This is a violation of the forbidden behavior clause [fb-modify-basic-economy]. The specific action is found in AGENT CALL update_reservation_flights({\"reservation_id\": \"M05KNL\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT110\", \"date\": \"2024-05-24\"}, {\"flight_number\": \"HAT206\", \"date\": \"2024-05-24\"}], \"payment_id\": \"gift_card_8887175\"}) at [19].",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -5172,9 +5136,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -5190,9 +5152,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to update a reservation that involved a basic economy flight, which is a forbidden behavior as the agent could handle the request. This is evidenced by the agent's action at [19] where they called update_reservation_flights without addressing the basic economy restriction.",
+          "reason": "The agent made multiple tool calls simultaneously when it called both get_reservation_details for two different reservation IDs at the same time, which violates the forbidden behavior of making multiple tool calls simultaneously.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -5220,7 +5182,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight (reservation ID: UHDAHF) without adhering to the policy that prohibits modifying basic economy flights. This is a violation of the forbidden behavior clause [fb-modify-basic-economy].",
+            "reason": "The agent modified a basic economy flight without adhering to the policy that prohibits such modifications. This is a violation of the forbidden behavior clause [fb-modify-basic-economy]. The specific action is found in AGENT CALL update_reservation_flights({\"reservation_id\": \"M05KNL\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT110\", \"date\": \"2024-05-24\"}, {\"flight_number\": \"HAT206\", \"date\": \"2024-05-24\"}], \"payment_id\": \"gift_card_8887175\"}) at [19].",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -5229,9 +5191,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -5245,9 +5205,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to update a reservation that involved a basic economy flight, which is a forbidden behavior as the agent could handle the request. This is evidenced by the agent's action at [19] where they called update_reservation_flights without addressing the basic economy restriction.",
+            "reason": "The agent made multiple tool calls simultaneously when it called both get_reservation_details for two different reservation IDs at the same time, which violates the forbidden behavior of making multiple tool calls simultaneously.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -5650,7 +5610,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified multiple reservations from business class to economy class without confirming the user's membership status and the implications of downgrading, which is a violation of the obligation to confirm compensation eligibility. The user is a regular member and has no travel insurance, which should have been confirmed before proceeding with the downgrades.",
+          "reason": "The agent modified multiple reservations from business class to economy class without confirming the user's membership status and the implications of downgrading, which is a violation of the obligation to confirm compensation eligibility, especially since the user is a regular member and has no travel insurance. This is evidenced by the agent's actions in [10] where the downgrades were processed without confirming the user's eligibility for compensation.",
           "clause_refs": [
             "obl-confirm-compensation-eligibility"
           ],
@@ -5660,9 +5620,7 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "1/6 mutations confirmed (rate=17%); unconfirmed: update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.16666666666666666
         },
         "information_grounding": {
@@ -5677,9 +5635,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to a human agent for a handleable request regarding downgrading flights, which is a violation of the forbidden behavior rule.",
+          "reason": "The agent made multiple tool calls to update reservations simultaneously without waiting for a user response, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -5707,7 +5665,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified multiple reservations from business class to economy class without confirming the user's membership status and the implications of downgrading, which is a violation of the obligation to confirm compensation eligibility. The user is a regular member and has no travel insurance, which should have been confirmed before proceeding with the downgrades.",
+            "reason": "The agent modified multiple reservations from business class to economy class without confirming the user's membership status and the implications of downgrading, which is a violation of the obligation to confirm compensation eligibility, especially since the user is a regular member and has no travel insurance. This is evidenced by the agent's actions in [10] where the downgrades were processed without confirming the user's eligibility for compensation.",
             "clause_refs": [
               "obl-confirm-compensation-eligibility"
             ],
@@ -5716,9 +5674,7 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "1/6 mutations confirmed (rate=17%); unconfirmed: update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10, update_reservation_flights@10",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.16666666666666666
           },
           "information_grounding": {
@@ -5731,9 +5687,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to a human agent for a handleable request regarding downgrading flights, which is a violation of the forbidden behavior rule.",
+            "reason": "The agent made multiple tool calls to update reservations simultaneously without waiting for a user response, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -6011,17 +5967,14 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
           "category": "information_grounding",
-          "passed": true,
-          "reason": "",
+          "passed": false,
+          "reason": "The agent provided subjective recommendations regarding the flight options available for the user's return flight, which is a violation of the forbidden behavior clause [fb-provide-subjective-recommendations]. Specifically, the agent stated, 'Please let me know which option you would like to choose for your return flight!' in [20].",
           "clause_refs": [
-            "fb-provide-unverified-info",
             "fb-provide-subjective-recommendations"
           ],
           "score": null
@@ -6029,9 +5982,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to cancel the reservation to a human agent despite being able to handle the cancellation under the user's travel insurance, which is a violation of the forbidden behavior regarding transferring handleable requests.",
+          "reason": "The agent made multiple tool calls simultaneously to search for direct flights on two different dates, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -6054,8 +6007,8 @@
       },
       "summary": {
         "n_dimensions": 6,
-        "n_passed": 4,
-        "n_failed": 2,
+        "n_passed": 3,
+        "n_failed": 3,
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
@@ -6068,25 +6021,22 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "1/1 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
-            "passed": true,
-            "reason": "",
+            "passed": false,
+            "reason": "The agent provided subjective recommendations regarding the flight options available for the user's return flight, which is a violation of the forbidden behavior clause [fb-provide-subjective-recommendations]. Specifically, the agent stated, 'Please let me know which option you would like to choose for your return flight!' in [20].",
             "clause_refs": [
-              "fb-provide-unverified-info",
               "fb-provide-subjective-recommendations"
             ],
             "score": null
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to cancel the reservation to a human agent despite being able to handle the cancellation under the user's travel insurance, which is a violation of the forbidden behavior regarding transferring handleable requests.",
+            "reason": "The agent made multiple tool calls simultaneously to search for direct flights on two different dates, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -6451,7 +6401,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent modified a basic economy flight by attempting to upgrade it to economy class, which is a violation of the policy against modifying basic economy flights. This is evidenced by the agent's action in [17] where the agent calls to update the reservation flights for the basic economy flight (ID: FQ8APE).",
+          "reason": "The agent modified the passenger count and attempted to upgrade the cabin class for a basic economy flight (reservation ID: FQ8APE), which is a violation of the policy against modifying basic economy flights. This is evidenced by the agent's action at [17] where the cabin class was changed from basic economy to economy.",
           "clause_refs": [
             "fb-modify-basic-economy"
           ],
@@ -6461,9 +6411,7 @@
           "category": "confirmation_discipline",
           "passed": false,
           "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: update_reservation_flights@17, update_reservation_baggages@19",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 0.3333333333333333
         },
         "information_grounding": {
@@ -6479,9 +6427,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent attempted to modify a reservation with a basic economy flight by upgrading the cabin class, which is a forbidden behavior. This is evidenced by the agent's action in [17] where they called update_reservation_flights with the intention to upgrade the cabin class from basic economy to economy.",
+          "reason": "The agent made multiple tool calls simultaneously when attempting to update the reservation details, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions at [6] where multiple calls to get_reservation_details were made in a single action.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -6511,7 +6459,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent modified a basic economy flight by attempting to upgrade it to economy class, which is a violation of the policy against modifying basic economy flights. This is evidenced by the agent's action in [17] where the agent calls to update the reservation flights for the basic economy flight (ID: FQ8APE).",
+            "reason": "The agent modified the passenger count and attempted to upgrade the cabin class for a basic economy flight (reservation ID: FQ8APE), which is a violation of the policy against modifying basic economy flights. This is evidenced by the agent's action at [17] where the cabin class was changed from basic economy to economy.",
             "clause_refs": [
               "fb-modify-basic-economy"
             ],
@@ -6520,9 +6468,7 @@
           "confirmation_discipline": {
             "passed": false,
             "reason": "1/3 mutations confirmed (rate=33%); unconfirmed: update_reservation_flights@17, update_reservation_baggages@19",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 0.3333333333333333
           },
           "information_grounding": {
@@ -6536,9 +6482,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent attempted to modify a reservation with a basic economy flight by upgrading the cabin class, which is a forbidden behavior. This is evidenced by the agent's action in [17] where they called update_reservation_flights with the intention to upgrade the cabin class from basic economy to economy.",
+            "reason": "The agent made multiple tool calls simultaneously when attempting to update the reservation details, which violates the forbidden behavior of making multiple tool calls at once. This is evidenced by the agent's actions at [6] where multiple calls to get_reservation_details were made in a single action.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -6805,7 +6751,7 @@
         "policy_compliance": {
           "category": "policy_compliance",
           "passed": false,
-          "reason": "The agent booked a basic economy flight without confirming the user's preference for travel insurance, which is an obligation that was not met.",
+          "reason": "The agent booked a round trip flight with basic economy class without confirming the user's desire for travel insurance, which is an obligation that was not met.",
           "clause_refs": [
             "obl-confirm-travel-insurance"
           ],
@@ -6815,9 +6761,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "2/2 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -6833,9 +6777,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the request to remove a passenger from the reservation, which is a handleable request. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+          "reason": "The agent made multiple tool calls simultaneously when searching for direct flights, which violates the forbidden behavior of making multiple tool calls at once.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -6864,7 +6808,7 @@
         "by_dimension": {
           "policy_compliance": {
             "passed": false,
-            "reason": "The agent booked a basic economy flight without confirming the user's preference for travel insurance, which is an obligation that was not met.",
+            "reason": "The agent booked a round trip flight with basic economy class without confirming the user's desire for travel insurance, which is an obligation that was not met.",
             "clause_refs": [
               "obl-confirm-travel-insurance"
             ],
@@ -6873,9 +6817,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "2/2 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -6889,9 +6831,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the user to a human agent for a request that the agent could handle, specifically the request to remove a passenger from the reservation, which is a handleable request. This is a violation of the forbidden behavior regarding transferring on handleable requests.",
+            "reason": "The agent made multiple tool calls simultaneously when searching for direct flights, which violates the forbidden behavior of making multiple tool calls at once.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -7189,9 +7131,7 @@
           "category": "confirmation_discipline",
           "passed": true,
           "reason": "3/3 mutations preceded by a fresh affirmative user turn (rate=100%)",
-          "clause_refs": [
-            "obl-obtain-confirmation"
-          ],
+          "clause_refs": [],
           "score": 1.0
         },
         "information_grounding": {
@@ -7207,9 +7147,9 @@
         "scope_adherence": {
           "category": "scope_adherence",
           "passed": false,
-          "reason": "The agent transferred the request to a human agent despite being able to handle the booking with the available tools and policy.",
+          "reason": "The agent made multiple tool calls and responded to the user simultaneously when calculating the total price for the reservation, which is a violation of the forbidden behavior rule.",
           "clause_refs": [
-            "fb-transfer-on-handleable-request"
+            "fb-make-multiple-tool-calls"
           ],
           "score": null
         },
@@ -7257,9 +7197,7 @@
           "confirmation_discipline": {
             "passed": true,
             "reason": "3/3 mutations preceded by a fresh affirmative user turn (rate=100%)",
-            "clause_refs": [
-              "obl-obtain-confirmation"
-            ],
+            "clause_refs": [],
             "score": 1.0
           },
           "information_grounding": {
@@ -7273,9 +7211,9 @@
           },
           "scope_adherence": {
             "passed": false,
-            "reason": "The agent transferred the request to a human agent despite being able to handle the booking with the available tools and policy.",
+            "reason": "The agent made multiple tool calls and responded to the user simultaneously when calculating the total price for the reservation, which is a violation of the forbidden behavior rule.",
             "clause_refs": [
-              "fb-transfer-on-handleable-request"
+              "fb-make-multiple-tool-calls"
             ],
             "score": null
           },
@@ -7301,5 +7239,5 @@
   "agent_model": "gpt-4o-mini",
   "user_model": "gpt-4o-mini",
   "judge_model": "gpt-4o-mini",
-  "run_id": "tau3-iter3-rejudge"
+  "run_id": "tau3-iter1-20260513-070516"
 }

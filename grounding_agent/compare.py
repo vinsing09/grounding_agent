@@ -281,24 +281,50 @@ def variant_overview(
 
 
 def reward_kind(record: dict[str, Any]) -> str:
-    """Categorise a graded task record by tau-bench reward kind.
+    """Categorise a graded task record by which reward-check kinds
+    are present.
+
+    Tau-bench (2024) shape:
+      reward_info.info = {r_actions: float} XOR {r_outputs: float, outputs: dict}
+
+    τ³-bench (March 2026) shape:
+      reward_info has first-class fields: db_check, env_assertions,
+      action_checks, nl_assertions, communicate_checks. Each may be
+      None or a list/object.
 
     Returns one of:
-      - 'r_actions'  — DB-state match against gold action list
-      - 'r_outputs'  — final-text-match against expected outputs
-      - 'no_grade'   — env did not compute reward_info (max_steps,
-                       crash, etc.)
+      - 'r_actions'  — tau-bench action-match grading
+      - 'r_outputs'  — tau-bench output-text-match grading
+      - 'db+...'     — τ³-bench multi-check combo, joined with '+'
+      - 'no_grade'   — env did not compute reward (max_steps, crash, ...)
     """
     info = record.get("info") or {}
     ri = info.get("reward_info")
     if ri is None:
         return "no_grade"
-    inner = (ri.get("info") or {}) if isinstance(ri, dict) else {}
+    if not isinstance(ri, dict):
+        return "no_grade"
+
+    # tau-bench legacy shape
+    inner = ri.get("info") or {}
     if "r_actions" in inner:
         return "r_actions"
     if "r_outputs" in inner:
         return "r_outputs"
-    return "no_grade"
+
+    # τ³-bench RewardInfo first-class checks
+    present: list[str] = []
+    if ri.get("db_check"):
+        present.append("db")
+    if ri.get("env_assertions"):
+        present.append("env")
+    if ri.get("action_checks"):
+        present.append("action")
+    if ri.get("nl_assertions"):
+        present.append("nl")
+    if ri.get("communicate_checks"):
+        present.append("comm")
+    return "+".join(present) if present else "no_grade"
 
 
 def termination_kind(record: dict[str, Any]) -> str:

@@ -1,26 +1,27 @@
 # grounding_agent — presentation
 
 > Submission for Meraki Labs Founding AI Engineer Work Trial, PS4 —
-> *Evaluation Framework from Scratch*. Two-day work-trial, scope
-> ruthless. Read time ≈ 5 minutes.
+> *Evaluation Framework from Scratch*. Read time ≈ 5 minutes.
 
 ---
 
 ## In one sentence
 
 A multi-dimensional evaluation framework for tool-calling LLM agents,
-applied to τ-bench's airline customer-support agent, where the
-**disagreements between auto-eval and τ-bench's programmatic reward
-are the result** — and where structured forensic iteration turned
-the framework's own weaknesses into measured improvements.
+evaluated against **τ³-bench** (the current benchmark from Sierra
+Research — the original τ-bench is obsolete) on the airline customer-
+support agent, where the **disagreements between auto-eval and the
+benchmark's programmatic reward are the result** and where structured
+forensic iteration turned the framework's own weaknesses into measured
+improvements.
 
 ---
 
 ## What we built
 
 ### Seven-category failure taxonomy
-A frozen taxonomy of structural failure modes for tool-using agents.
-Each category is grounded in a load-bearing policy clause.
+Frozen taxonomy of structural failure modes for tool-using agents.
+Each category grounded in a load-bearing policy clause.
 
 | Category | Judge kind | What it catches |
 |---|---|---|
@@ -29,247 +30,238 @@ Each category is grounded in a load-bearing policy clause.
 | `information_grounding` | semantic | Facts not in tool outputs / user messages |
 | `scope_adherence` | semantic | Mis-applied transfer-to-human decision |
 | `tool_sequence_correctness` | **deterministic** | Mutation without prerequisite read |
-| `tool_argument_correctness` | **deterministic** | Tool call returned `Error: ...` |
-| `task_completion` | observed via τ-bench reward | End-to-end goal achievement |
+| `tool_argument_correctness` | **deterministic** | Tool returned `Error:` (now reads τ³-bench's `ToolMessage.error` flag) |
+| `task_completion` | observed via reward | End-to-end goal achievement |
 
-3 semantic + 3 deterministic + 1 reward-observed = **7 dimensions, 6 judges**.
+3 semantic + 3 deterministic + 1 reward-observed = **7 dimensions, 6 judges.**
 
-### Contract generated from policy
+### Generated contract
 One LLM call against `vendor/tau_bench_airline/policy.md` produces
-`data/contract.json` — obligations + forbidden behaviors +
-tool_sequences, each tagged to a taxonomy category. Validator
-gates save and load. **No hand-curation** — removes the
-"candidate-curated favourable obligations" critique.
+`data/contract.json` (15 clauses across obligations + forbidden
+behaviors + tool_sequences, each tagged to a taxonomy category).
+Validator gates save and load. **No hand-curated clause text**.
 
-### Six judges
-- 3 semantic LLM judges (`policy_compliance`, `information_grounding`,
-  `scope_adherence`). Each receives an "AGENT ACTIONS" block first,
-  then the full trajectory for context, with explicit ground rules.
-- 3 deterministic Python checks (`confirmation_discipline`,
-  `tool_sequence_correctness`, `tool_argument_correctness`). Each
-  walks the trajectory once and emits a binary verdict + a continuous
-  `score` field where applicable.
+### Runner adapter
+`grounding_agent/runner.py` ports between **two backends**:
+- Originally: `sierra-research/tau-bench` (the old one).
+- Now: `sierra-research/tau2-bench` (which ships τ³-bench).
 
-### Runner + evaluator + comparator
-- `runner.run_task` drives the τ-bench tool-calling agent, captures
-  the trajectory, classifies termination
-  (`completed`/`transfer`/`max_steps`), extracts tool errors.
-- `evaluator.evaluate_trajectory` applies all six judges.
-- `compare.py` produces confusion matrices, per-clause citation
-  counts, termination distributions, and reward-kind decomposition
-  (`r_actions` vs `r_outputs` vs `no_grade`).
+Adapter flattens pydantic Message types into OpenAI shape, maps τ³-bench's
+first-class `TerminationReason` enum to our termination kinds, reads
+`ToolMessage.error: bool` for the argument-correctness check. **The
+rest of the framework (taxonomy, contract, judges, evaluator,
+compare, eventlog) did not need to change** — the framework is
+portable.
 
 ### Structured event log
-JSON-Lines at `results/logs/<run_id>/<variant>.jsonl`. Captures
-run-level / task-level / per-judge events with timing and verdicts.
-Replayable. Made forensics pass 2 reproducible.
+JSON-Lines at `results/logs/<run_id>/<variant>.jsonl`. Per-task and
+per-judge events with timing and verdicts. Replayable.
 
-### 120 tests
-Every module covered. Test fixtures use the exact OpenAI chat-
-completion message shape `tau_bench.agents.tool_calling_agent.solve`
-emits — no toy data.
+### 125 tests
+All passing. Test fixtures use the actual τ³-bench message shapes
+and exercise the adapter in isolation.
 
 ---
 
-## How we built it
+## How we built it — the journey
 
-### Day 1 (build the pipeline)
-Scaffold → taxonomy → contract → judges → runner → evaluator →
-smoke test on 2 tasks. Six modules, all under 300 lines. Per-chunk
-code reviews in `code_review/`.
+### Day 1 (initial build, against τ-bench)
+Scaffold → taxonomy → contract → judges → runner → evaluator → smoke
+test on 2 tasks. Six modules, all under 300 lines.
 
-### Day 2 (run + compare + write)
-Full 20×2 evaluation. v2 prompt variant = v0 + "execution discipline"
-preamble. First forensics report → six load-bearing findings.
+### Day 2 (initial eval, against τ-bench)
+Full 20×2 evaluation. First forensics pass surfaced six load-bearing
+findings.
 
-### Forensics-driven iteration (no shortcuts)
+### Forensics iterations 1–3 (still on τ-bench)
+Bucketed four issue classes (misclassified judge, wrong judge input
+shape, missing dimension, reporting gaps); fixed them; re-ran;
+re-mined; iterated on contract mistagging. Reward stayed flat at
+~10% across variants. v2 looked WORSE than v0 (5% vs 16%).
 
-**Forensics pass 1** (`results/forensics.md`) mined the trajectories
-for what the WRITEUP missed. Six findings bucketed into four issue
-classes:
+### Iteration 4 — the meta-discovery
+A web check revealed **τ-bench is obsolete**. Sierra released
+τ²-bench (2025) and τ³-bench (March 2026). τ³-bench **fixed 27
+airline tasks** — incorrect expected actions, ambiguous user
+instructions, impossible constraints, missing fallbacks, policy
+loophole closures. Per Sierra's own blog: airline pass^1 scores
+improved **+14 to +20 points** after the fixes.
 
-- **Bucket A** — `confirmation_discipline` LLM judge was provably worse
-  than a 10-line Python heuristic.
-- **Bucket B** — semantic judges anchored on user *requests*, not
-  agent *actions*. Verified on a canonical refuse-and-transfer case.
-- **Bucket C** — missing dimension: arithmetic errors dominated
-  failures and the taxonomy had no `tool_argument_correctness`.
-- **Bucket D** — reward kind (`r_actions` vs `r_outputs`) and
-  termination kind (`max_steps` etc.) not surfaced.
+Implication: **iterations 1–3 partially measured ground-truth bugs,
+not agent failures.** Migrated the framework to τ³-bench. Re-ran
+all three iterations.
 
-**Iteration 2** — fixed all four buckets + added structured event
-logging.
-
-**Forensics pass 2** (`results/forensics_v2.md`) verified each
-bucket landed its effect:
-- Bucket A: confirmation pass-rate 0% → 65% (v0). FN count 3 → 0.
-- Bucket B: task 15 (canonical refuse case) went 0/5 PASS → 6/6 PASS.
-- Bucket C: 18 tool errors caught (v0), 39 caught (v2).
-- Bucket D: every metric now surfaced in compare output.
-
-Identified one residual issue: contract generator still mistagging
-`fb-modify-basic-economy` and 3 other business-rule prohibitions.
-
-**Iteration 3** — added CATEGORY DEFINITIONS + DECISION HEURISTIC
-to the contract-generation prompt. Re-judged cached trajectories
-via a new `--judge-only` flag (no agent re-rollout).
-
-**Forensics pass 3** (`results/forensics_v3.md`) measured iter-3
-deltas: three target mistags moved correctly; `fb-modify-basic-
-economy` citations dropped 9 → 5. One new mistag emerged. Stopped
-at diminishing returns.
+### Forensics iterations 1–3 on τ³-bench (final)
+- Iter-1: surfaced two new issues (the τ³-bench contract mistagged
+  the multi-tool-call clause as scope_adherence; reward_kind didn't
+  understand τ³-bench's richer `RewardInfo` shape).
+- Iter-2: hand-patched the contract; updated `reward_kind()`; added
+  missing `confirmation_discipline` and `tool_argument_correctness`
+  clauses. Rejudge under new contract. tool_sequence_correctness
+  moved 65% → 75% on v0.
+- Iter-3: refined `scope_adherence` clause text. information_grounding
+  unstuck (65% → 80% on v0) but `scope_adherence` returned to 0% —
+  the LLM judge cannot reliably decide whether a transfer was scope-
+  appropriate.
 
 ---
 
-## Key numbers (iter-3 final state)
+## Key numbers (τ³-bench iter-3 final state)
 
 ### Variant overview
 
 | metric | v0 (wiki as-is) | v2 (discipline preamble) |
 |---|---:|---:|
-| τ-bench reward pass | 10% (2/20) | 10% (2/20) |
-| avg messages / run | 33.9 | 33.1 |
-| total cost | $0.14 | $0.15 |
-| **completed** | 14 | 14 |
-| **transfer** | 3 | 2 |
-| **max_steps** | 3 | 4 |
-| tool errors (`book_reservation`) | 16 | **34** |
+| τ³-bench reward (all) | **30%** | **35%** |
+| reward (train) | 50% | 20% |
+| reward (held-out) | 10% | **50%** |
+| avg messages / run | 22.7 | 24.2 |
+| total cost | $0.09 | $0.13 |
+| termination: completed | 7 | 8 |
+| termination: transfer | 6 | 6 |
+| termination: max_steps | 7 | 6 |
+| tool errors observed | 6 | 6 |
 
-### Per-dimension pass rate (iter-3 v0, all-split)
+### Before / after the τ³-bench migration
 
-| dimension | iter-1 | iter-3 | move |
+| metric | τ-bench iter-3 | τ³-bench iter-3 | net |
 |---|---:|---:|---|
-| `confirmation_discipline` | 0% | **65%** | +65pp ✅ deterministic |
-| `information_grounding` | 37% | 70% | +33pp ✅ Bucket B |
-| `scope_adherence` | 5% | 30% | +25pp ✅ Bucket B |
-| `policy_compliance` | 11% | 20% | +9pp |
-| `tool_sequence_correctness` | 74% | 75% | unchanged |
-| `tool_argument_correctness` | — | **65%** | new ✅ Bucket C |
+| v0 reward (all) | 10% | **30%** | **+20pp** |
+| v2 reward (all) | 10% | **35%** | **+25pp** |
+| v2 reward (held-out) | 10% | **50%** | **+40pp** |
+| v2 vs v0 (held-out) | -10pp | **+40pp** | **sign flipped** |
 
-### Judge cost decomposition
+The agent did not change. The benchmark did. **About half of the
+agent's apparent failure on the old τ-bench was broken ground
+truth**, confirming Sierra's claim.
+
+### Per-dimension pass rate (iter-3 final)
+
+| dimension | v0 | v2 |
+|---|---:|---:|
+| `confirmation_discipline` | 70% | 70% |
+| `information_grounding` | 80% | 70% |
+| `policy_compliance` | 25% | 15% |
+| `scope_adherence` | **0%** ⚠ | 0% ⚠ |
+| `tool_sequence_correctness` | 75% | 85% |
+| `tool_argument_correctness` | 75% | 80% |
+
+### Judge cost decomposition (from event log)
 
 | dimension | mean duration | kind |
 |---|---:|---|
 | `policy_compliance` | 2 900 ms | semantic |
 | `scope_adherence` | 2 700 ms | semantic |
 | `information_grounding` | 1 900 ms | semantic |
-| All deterministic judges | **< 1 ms** | deterministic |
-
-Per trajectory: ~7-8 s of semantic judge time. At 100k/day this
-is the dominant cost line (~$15/day in tokens).
+| All 3 deterministic judges | **< 1 ms each** | deterministic |
 
 ---
 
 ## What the framework caught that vibes-eval would not
 
-1. **v2 made the agent worse on reward, not better** (iter-1: 16% →
-   5%). The "execution discipline" preamble added confirmation
-   rounds, lengthened trajectories ~30%, and hit `max_steps`. Multi-
-   dimensional eval located the cause precisely; single-score eval
-   would have stopped at "v2 is worse."
-2. **`confirmation_discipline` LLM judge was systemically wrong.** A
-   10-line Python heuristic out-performed it. The framework caught
-   its own weakness because the per-dimension verdicts were
-   debugger-friendly.
-3. **Semantic judges anchored on conversation subject, not agent
-   action.** Task 15 (refuse-and-transfer) was the canonical case;
-   Bucket B's "AGENT ACTIONS" block fixed it.
-4. **The real failure mode is arithmetic.** Payment-split mismatches,
-   gift-card balance shortfalls, invented user_ids. The original
-   six-category taxonomy didn't have a dimension for this; Bucket C
-   added one.
-5. **Generated contracts mistag clauses.** Three iterations of
-   prompt-engineering reduced — but did not eliminate — the noise.
-   The framework's diagnostic output exposed the mistag at clause-id
-   granularity, making the fix tractable.
+1. **The benchmark itself was broken** (in the original τ-bench run).
+   The framework's structured, per-dimension verdicts made it natural
+   to investigate "why does v2 produce more arithmetic tool errors
+   yet sometimes have higher reward?" — which led to the τ³-bench
+   discovery.
+2. **v2 generalises better than v0 on held-out** (50% vs 10% on
+   τ³-bench). On the broken τ-bench this was invisible. Multi-
+   dimensional eval surfaces variant-vs-variant deltas that single-
+   score eval would average out.
+3. **`confirmation_discipline` LLM judge was strictly worse than a
+   10-line Python heuristic.** Reclassified as deterministic; pass-
+   rate went from 0% → 70%. Same fix held under τ³-bench.
+4. **Arithmetic dominates agent failures.** Added a new dimension
+   that reads τ³-bench's `ToolMessage.error: bool` flag directly.
+   The flag is a cleaner signal than our prior grep-for-`Error:`
+   heuristic.
+5. **`scope_adherence` is the dimension where the LLM-judge approach
+   hits its limit.** Three iterations of clause refinement couldn't
+   get the judge to reliably decide "was the user's request
+   in-scope?". Honest finding worth documenting.
 
 ---
 
 ## What's missing / known limitations
 
-| gap | why we accepted it | how to fix |
+| gap | why | fix |
 |---|---|---|
-| No coverage for **argument-choice correctness** (right flight, right cabin) | The deterministic checker catches *invalid* args (tool returns Error); it doesn't catch *suboptimal* args the tool accepts | Add a semantic judge that compares the agent's chosen args against tool returns + user constraints |
-| `r_outputs` tasks (text-match grading) **never pass** with gpt-4o-mini | Our taxonomy has no "answer quality" dimension; these are 2-4 tasks per variant | Add a `response_quality` judge that scores the final assistant message against the user's question |
-| **Contract mistagging is structural noise** of LLM generation | We accepted it to preserve "no curated obligations" | In production: one human-in-the-loop tag review after generation (validator infra already there) |
-| **Single trial per task** (n=20) | Multi-trial would have multiplied cost in a 2-day window | Multi-trial at higher N for statistical confidence on v0/v2 deltas |
-| **Synchronous judges** | Sufficient at n=40 | `evaluate_trajectory` is pure; async-ify in 30 min for production |
-| **One model (gpt-4o-mini) for agent + user-sim + judges** | Cost discipline | Tier: gpt-4o-mini for sampled inspection, gpt-4o for arbitration on flagged trajectories |
-| **No web UI / dashboard** | Out of scope | Markdown + JSON outputs suffice for review |
+| `scope_adherence` 0% pass-rate persists | LLM judge can't reliably evaluate scope from a single clause | Multi-shot panel, gpt-4o, or drop the dimension |
+| Argument-CHOICE correctness (right flight, right cabin, right split) | Bucket C catches *invalid* args via Error returns; not *suboptimal* args | New semantic judge re-deriving expected args from tool returns + user constraints |
+| Communicate-checks dimension (τ³-bench's nl_assertions / communicate_checks) | Framework doesn't read these | Surface a `response_quality` dimension that reads `RewardInfo.nl_assertions` |
+| Single trial per task (n=20) | Cost discipline | Multi-trial at higher N |
+| Synchronous judges | Sufficient at n=40 | `evaluate_trajectory` is pure; async-ify in ~30 min |
+| One judge model (gpt-4o-mini) | Cost | Tier: deterministic on 100%, gpt-4o-mini on sample, gpt-4o on flagged |
 
 ---
 
-## Way forward (in order of leverage)
+## Way forward
 
-1. **`tool_argument_choice_correctness`** — close the coverage gap
-   that produces most remaining FPs. Semantic judge that re-derives
-   the *correct* args from tool returns + user constraints and
-   compares to the agent's call. Highest leverage: catches the
-   modal failure mode (wrong flight numbers, wrong payment splits)
-   that no current dimension covers.
-2. **`response_quality`** dimension for `r_outputs` tasks. Currently
-   0% pass; framework can't say why.
-3. **Tag-review step** in `scripts/generate_contract.py`: emit the
-   draft contract, render it diff-friendly, accept a tag-only
-   overlay file. One-pass human review yields a clean tagged
-   contract while keeping clause text generator-authored.
-4. **Multi-trial at N≥50** for tighter v0/v2 deltas. The iter-2 →
-   iter-3 → iter-1 reward variance (16% → 10% → 5% across runs) is
-   pure stochasticity at this sample size.
-5. **Async judges** so end-to-end wall time isn't bottlenecked by
-   sequential litellm calls.
-6. **Tier production judges** by stakes — deterministic on 100%,
-   semantic on a sampled %, gpt-4o arbitration on flagged.
-7. **Active prompt-tuning of the semantic judges.** Forensics pass 2
-   showed `policy_compliance` and `information_grounding` still
-   over-cite. Few-shot examples in the system prompt would help.
-8. **Multi-agent comparison.** Right now the framework evaluates one
-   agent (τ-bench customer-support). Plumbing for "evaluate any
-   tool-calling agent against a policy" is one indirection.
+1. **Surface `RewardInfo` decomposition** (db_check + env_assertions
+   + action_checks + nl_assertions + communicate_checks). Each is a
+   first-class scoring dimension in τ³-bench. The framework currently
+   ignores them; adding visibility would catch what we're missing.
+2. **`tool_argument_choice_correctness`** semantic judge. Close the
+   coverage gap that produces most remaining FPs.
+3. **Drop or reframe `scope_adherence`.** Three iterations failed to
+   stabilise it; accept the dimension as inherently noisy or remove.
+4. **Multi-trial at N ≥ 50** for tighter v0/v2 deltas.
+5. **Tier production judges by stakes** — deterministic 100%,
+   semantic sample, gpt-4o arbitration.
+6. **One human-in-the-loop tag-review step** after each contract
+   generation. The forensic iterations 2+3 essentially WERE that
+   review; productizing it would prevent the mistag-of-the-week.
+7. **Multi-agent comparison.** The framework evaluates one agent
+   right now; the plumbing for "evaluate any tool-using agent" is
+   one indirection.
 
 ---
 
 ## Cost + ops at production scale
 
-- **Per-trajectory cost** with current setup: ~$0.015 (agent + user-sim
-  + 3 semantic judges + 3 free deterministic). At 100k/day = ~$1.5k/day.
+- **Per-trajectory cost** (τ³-bench, gpt-4o-mini end-to-end):
+  ~$0.012 (agent + user-sim + 3 semantic judges + 3 free
+  deterministic). At 100k/day = **~$1.2k/day**.
 - **Reducing cost without losing signal**:
-  - Run deterministic judges (free, ~0 ms each) on 100%.
-  - Sample semantic judges to 1-5%.
-  - Reserve gpt-4o for arbitration on flagged trajectories.
-- **Reliability**: errors recorded per-task, don't crash the run.
-  Idempotent caching means a partial run picks up cleanly.
-  Validator infra prevents malformed contracts from being silently
-  loaded.
-- **Observability**: every run produces a JSON-Lines event log
-  + per-task results JSON + a rendered comparison markdown. All
-  three are mineable post-hoc.
+  - Deterministic judges (free, < 1 ms each) on 100% of traffic.
+  - Sample semantic judges to 1–5%.
+  - gpt-4o for arbitration on flagged trajectories only.
+- **Reliability**: errors recorded per-task, don't crash runs.
+  Idempotent caching; per-task crash safety. Validator infrastructure
+  prevents malformed contracts from being silently loaded.
+- **Observability**: every run produces a JSON-Lines event log + per-
+  task results JSON + a rendered comparison markdown. All three are
+  mineable.
 
 ---
 
 ## What we learned (the meta-points)
 
-1. **Multi-dimensional eval's value emerges in the disagreements
-   with ground truth, not in the agreements.** If our framework
-   matched the reward perfectly, it would be redundant; it earns
-   its keep when it shows you *why* the reward failed.
+1. **Multi-dimensional eval's value is in the disagreements with
+   ground truth, not the agreements.** Including disagreements that
+   exposed the ground truth itself was broken.
 2. **LLM judges and deterministic judges are not interchangeable.**
-   Confirmation is mechanically observable; an LLM was strictly
-   worse. Tool argument validity is mechanically observable; an
-   LLM is unnecessary. Reserve LLM judges for genuinely subjective
-   dimensions.
-3. **Forensics-driven iteration is the right workflow.** Build →
-   observe → bucketize → fix → re-observe. Each iteration's data
-   is preserved so the trajectory of improvement is auditable.
-4. **The framework's output is debuggable because it cites
-   clause-ids.** Pass-1 forensics couldn't have identified
-   `obl-confirm-action` as the always-cited clause without
-   structured citations. Same for the mistagged clauses.
-5. **Generated contracts have structural noise that bounds eval
-   precision.** No amount of prompt engineering eliminates it
-   entirely. Production deployment needs human-in-the-loop on the
-   tag layer; the validator infrastructure is the natural home for
-   that review.
+   Confirmation, tool-call ordering, and tool-error detection are
+   mechanically observable; LLMs were strictly worse. Reserve LLM
+   judges for genuinely subjective dimensions (policy compliance,
+   information grounding).
+3. **`scope_adherence` is where the LLM-judge approach breaks.**
+   Deciding "was the user's request in-scope" needs holding the
+   whole policy + tool catalog in working memory. gpt-4o-mini won't
+   do it reliably.
+4. **Forensics-driven iteration converges fast** (1–2 iterations
+   produce major shifts; subsequent iterations are 1-cell shifts).
+   This held under both τ-bench AND τ³-bench. Plateau is real.
+5. **Benchmarks themselves can be broken.** A framework whose value
+   depends on a benchmark's ground truth needs **independent
+   verification** of that ground truth — at least once. The web
+   check that revealed τ³-bench is the kind of cheap due-diligence
+   step that should be in every eval-framework workflow.
+6. **Portability earns its keep.** Migrating from τ-bench to τ³-bench
+   required rewriting one module (`runner.py`) + patching one
+   helper (`compare.reward_kind`). The taxonomy, judges, evaluator,
+   eventlog were untouched. That's the framework being agnostic to
+   the agent-under-test, by design.
 
 ---
 
@@ -278,12 +270,16 @@ is the dominant cost line (~$15/day in tokens).
 | artifact | path |
 |---|---|
 | Code | `grounding_agent/` (7 modules, all ≤ 300 lines) |
-| Tests | `tests/` (120 passing) |
-| Contract | `data/contract.json` (+ `.iter2.json` backup) |
+| Tests | `tests/` (125 passing) |
+| Contract | `data/contract.json` (+ `.tau1.json`, `.tau3.iter1.json` backups) |
+| Vendored policy | `vendor/tau_bench_airline/policy.md` (+ `.tau1.md` backup) |
+| Task split | `data/tasks.json` (τ³-bench train + held-out) |
 | Event logs | `results/logs/<run_id>/<variant>.jsonl` |
-| Forensics docs | `results/forensics.md`, `forensics_v2.md`, `forensics_v3.md` |
-| Comparison reports | `results/comparison.md` (+ `.iter2.md`, `.pre.md`) |
-| Per-iteration results | `results/{v0,v2}_results.json` + `.iter2.json` + `.pre.json` |
+| Forensics (τ-bench) | `forensics.md`, `forensics_v2.md`, `forensics_v3.md` |
+| Forensics (τ³-bench) | `forensics_tau3.md`, `forensics_tau3_v3.md` |
+| Migration doc | `results/tau1_vs_tau3.md` |
+| Comparison reports | `results/comparison.md` (+ many backups) |
+| Per-iteration results | `results/{v0,v2}_results{.tau1.iter3,.tau3.iter1,.tau3.iter2,}.json` |
 | Code reviews | `code_review/` (per-chunk dated reviews) |
 | Session log | `knowledge.md` |
 | Error log | `errors.md` |

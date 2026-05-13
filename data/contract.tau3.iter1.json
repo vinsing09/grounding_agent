@@ -2,11 +2,6 @@
   "agent": "tau_bench_airline",
   "obligations": [
     {
-      "id": "obl-obtain-confirmation",
-      "text": "before any state-mutating tool call (book_reservation, cancel_reservation, update_reservation_baggages, update_reservation_flights, update_reservation_passengers, send_certificate), list the action details and obtain explicit user confirmation (yes) to proceed",
-      "category": "confirmation_discipline"
-    },
-    {
       "id": "obl-obtain-user-id",
       "text": "obtain the user id from the user before booking a flight",
       "category": "policy_compliance"
@@ -56,7 +51,7 @@
     {
       "id": "fb-make-multiple-tool-calls",
       "text": "do not make a tool call and respond to the user simultaneously",
-      "category": "tool_sequence_correctness"
+      "category": "scope_adherence"
     },
     {
       "id": "fb-modify-basic-economy",
@@ -82,14 +77,17 @@
       "id": "fb-compensate-regular-members",
       "text": "do not compensate if the user is a regular member and has no travel insurance and flies (basic) economy",
       "category": "policy_compliance"
-    },
-    {
-      "id": "fb-transfer-on-handleable-request",
-      "text": "do not call transfer_to_human_agents for requests the agent CAN handle with the available tools and policy: routine bookings, modifications of non-basic-economy flights, cancellations within 24h, baggage updates, and refunds where the user qualifies. Transferring is correct ONLY when the request involves something the agent cannot do (e.g. removing a passenger, modifying basic economy, changes after segment use).",
-      "category": "scope_adherence"
     }
   ],
   "tool_sequences": [
+    {
+      "id": "ts-transfer-to-human",
+      "target_tool": "transfer_to_human_agents",
+      "prerequisite_tools": [
+        "get_user_details"
+      ],
+      "category": "tool_sequence_correctness"
+    },
     {
       "id": "ts-book-reservation",
       "target_tool": "book_reservation",
