@@ -1,263 +1,270 @@
-"""Runner tests.
+"""Tests for grounding_agent.runner (τ³-bench port).
 
-The runner is a thin wrapper around tau_bench. We unit-test its
-result-shaping logic by monkeypatching the tau_bench symbols it imports
-inside run_task. Live end-to-end execution is covered by the smoke
-test in scripts/smoke_test.py.
+The old test_runner monkey-patched MockAirlineDomainEnv + ToolCallingAgent
+from the original τ-bench. After the τ³-bench migration, run_task uses
+tau2.run.run_simulation; the easiest things to test in isolation are
+the pure adapter functions (_serialize_tool_call, _flatten_messages,
+classify_termination, extract_tool_errors).
+
+The live end-to-end behaviour is exercised by scripts/smoke_test.py and
+scripts/run_eval.py against the actual tau2-bench installation.
 """
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-import grounding_agent.runner as runner
+from grounding_agent.runner import (
+    _flatten_messages,
+    _serialize_tool_call,
+    airline_tool_catalog,
+    classify_termination,
+    extract_tool_errors,
+)
 
 
-class _FakeSolveResult:
-    def __init__(
-        self,
-        reward: float,
-        messages: list[dict],
-        info: dict | None,
-        total_cost: float | None,
-    ) -> None:
-        self.reward = reward
-        self.messages = messages
-        self.info = info
-        self.total_cost = total_cost
+# ----- _serialize_tool_call -------------------------------------------------
 
 
-class _FakeEnv:
-    def __init__(self, **kwargs: Any) -> None:
-        self.tools_info = [{"function": {"name": "search_direct_flight"}}]
-        self.wiki = "policy text"
-        self.kwargs = kwargs
+def test_serialize_tool_call_converts_to_openai_shape():
+    tc = SimpleNamespace(id="call_1", name="book_reservation", arguments={"flight": "F1"})
+    out = _serialize_tool_call(tc)
+    assert out["id"] == "call_1"
+    assert out["type"] == "function"
+    assert out["function"]["name"] == "book_reservation"
+    # arguments is JSON-serialized to a string in OpenAI shape
+    assert isinstance(out["function"]["arguments"], str)
+    assert '"flight"' in out["function"]["arguments"]
+    assert '"F1"' in out["function"]["arguments"]
 
 
-class _FakeAgent:
-    def __init__(self, **kwargs: Any) -> None:
-        self.kwargs = kwargs
-
-    def solve(self, env: Any, task_index: int, max_num_steps: int) -> _FakeSolveResult:
-        return _FakeSolveResult(
-            reward=1.0,
-            messages=[
-                {"role": "system", "content": env.wiki},
-                {"role": "user", "content": "hi"},
-            ],
-            info={"reward_info": {"r_actions": 1.0}},
-            total_cost=0.0042,
-        )
+def test_serialize_tool_call_handles_empty_args():
+    tc = SimpleNamespace(id="x", name="ping", arguments={})
+    out = _serialize_tool_call(tc)
+    assert out["function"]["arguments"] == "{}"
 
 
-def test_run_task_returns_expected_keys_and_types(monkeypatch):
-    import tau_bench.agents.tool_calling_agent as tc_mod
-    import tau_bench.envs.airline.env as env_mod
-
-    monkeypatch.setattr(env_mod, "MockAirlineDomainEnv", _FakeEnv)
-    monkeypatch.setattr(tc_mod, "ToolCallingAgent", _FakeAgent)
-
-    out = runner.run_task(
-        task_index=0,
-        agent_model="m-a",
-        agent_provider="openai",
-        user_model="m-u",
-        user_provider="openai",
-        max_steps=5,
-    )
-    assert out["task_index"] == 0
-    assert out["reward"] == 1.0
-    assert out["agent_model"] == "m-a"
-    assert out["user_model"] == "m-u"
-    assert isinstance(out["messages"], list) and len(out["messages"]) == 2
-    assert out["messages"][0]["content"] == "policy text"
-    assert out["total_cost"] == pytest.approx(0.0042)
-    assert "reward_info" in out["info"]
-    # Bucket D fields
-    assert out["max_steps"] == 5
-    assert "termination" in out and "kind" in out["termination"]
-    assert "tool_errors" in out and isinstance(out["tool_errors"], list)
-    assert "duration_s" in out and out["duration_s"] >= 0
+def test_serialize_tool_call_handles_missing_id():
+    tc = SimpleNamespace(id="", name="ping", arguments={})
+    out = _serialize_tool_call(tc)
+    assert out["id"] == ""
 
 
-def test_run_task_emits_events_when_eventlog_supplied(monkeypatch, tmp_path):
-    import tau_bench.agents.tool_calling_agent as tc_mod
-    import tau_bench.envs.airline.env as env_mod
-    from grounding_agent.eventlog import EventLog
-    import json
+# ----- _flatten_messages ----------------------------------------------------
 
-    monkeypatch.setattr(env_mod, "MockAirlineDomainEnv", _FakeEnv)
-    monkeypatch.setattr(tc_mod, "ToolCallingAgent", _FakeAgent)
 
-    with EventLog("r-test", "v0", log_dir=tmp_path) as elog:
-        runner.run_task(task_index=4, eventlog=elog)
+def _fake_assistant_msg(content, tool_calls=None):
+    """Imitates a tau2 AssistantMessage (pydantic) using SimpleNamespace.
+    The adapter only reads .role / .content / .tool_calls."""
+    return SimpleNamespace(role="assistant", content=content, tool_calls=tool_calls or [])
 
-    events = [
-        json.loads(l) for l in (tmp_path / "v0.jsonl")
-        .read_text(encoding="utf-8").splitlines()
+
+def _fake_user_msg(content):
+    return SimpleNamespace(role="user", content=content)
+
+
+def _fake_tool_msg(call_id, content, error=False):
+    return SimpleNamespace(role="tool", id=call_id, content=content, error=error)
+
+
+def _fake_tool_call(call_id, name, arguments):
+    return SimpleNamespace(id=call_id, name=name, arguments=arguments)
+
+
+def test_flatten_messages_basic_round_trip():
+    msgs = [
+        _fake_user_msg("Book me NYC->SEA."),
+        _fake_assistant_msg(
+            None,
+            tool_calls=[_fake_tool_call("c1", "get_user_details", {"user_id": "u"})],
+        ),
+        _fake_tool_msg("c1", '{"ok": true}'),
+        _fake_assistant_msg("got it"),
     ]
-    kinds = [e["event"] for e in events]
-    assert "task_start" in kinds
-    assert "task_end" in kinds
-    end = next(e for e in events if e["event"] == "task_end")
-    assert end["task_index"] == 4
-    assert "termination_kind" in end
-    assert end["reward"] == 1.0
+    out = _flatten_messages(msgs)
+    assert [m["role"] for m in out] == ["user", "assistant", "tool", "assistant"]
+    assert out[0]["content"] == "Book me NYC->SEA."
+    assert out[1]["tool_calls"][0]["function"]["name"] == "get_user_details"
+    # tool message gets `name` re-attached from the preceding tool_call by id
+    assert out[2]["name"] == "get_user_details"
+    assert out[2]["tool_call_id"] == "c1"
+    assert out[2]["error"] is False
+    assert out[3]["content"] == "got it"
 
 
-def test_run_task_wiki_override_replaces_agent_system_prompt(monkeypatch):
-    """v2 variant passes wiki_override; runner must hand it to the agent
-    constructor and NOT to the env. We capture both to prove it."""
-    import tau_bench.agents.tool_calling_agent as tc_mod
-    import tau_bench.envs.airline.env as env_mod
-
-    captured: dict[str, Any] = {}
-
-    class _CapturingAgent(_FakeAgent):
-        def __init__(self, **kwargs: Any) -> None:
-            captured["agent_wiki"] = kwargs.get("wiki")
-            super().__init__(**kwargs)
-
-    class _CapturingEnv(_FakeEnv):
-        def __init__(self, **kwargs: Any) -> None:
-            captured["env_kwargs"] = kwargs
-            super().__init__(**kwargs)
-
-    monkeypatch.setattr(env_mod, "MockAirlineDomainEnv", _CapturingEnv)
-    monkeypatch.setattr(tc_mod, "ToolCallingAgent", _CapturingAgent)
-
-    override = "OVERRIDDEN PROMPT TEXT"
-    runner.run_task(task_index=3, wiki_override=override)
-    assert captured["agent_wiki"] == override
-    # env was NOT given the override (would distort the user-sim/reward path)
-    assert "wiki" not in captured["env_kwargs"]
+def test_flatten_messages_propagates_tool_error_flag():
+    msgs = [
+        _fake_assistant_msg(
+            None,
+            tool_calls=[_fake_tool_call("c1", "book_reservation", {})],
+        ),
+        _fake_tool_msg("c1", "Error: payment amount does not add up", error=True),
+    ]
+    out = _flatten_messages(msgs)
+    assert out[1]["error"] is True
+    assert out[1]["name"] == "book_reservation"
 
 
-# ---- Bucket D: termination + tool-error extraction ------------------------
+def test_flatten_messages_handles_multi_tool_message():
+    """tau2.MultiToolMessage wraps multiple ToolMessages; we flatten
+    them in order so judges see one tool entry per call."""
+    multi = SimpleNamespace(
+        role="tool",
+        tool_messages=[
+            _fake_tool_msg("c1", "{}"),
+            _fake_tool_msg("c2", "Error: nope", error=True),
+        ],
+    )
+    msgs = [
+        _fake_assistant_msg(
+            None,
+            tool_calls=[
+                _fake_tool_call("c1", "get_user_details", {}),
+                _fake_tool_call("c2", "book_reservation", {}),
+            ],
+        ),
+        multi,
+    ]
+    out = _flatten_messages(msgs)
+    # 1 assistant + 2 flattened tool entries
+    assert len(out) == 3
+    assert out[1]["name"] == "get_user_details"
+    assert out[2]["name"] == "book_reservation"
+    assert out[2]["error"] is True
 
 
-def test_classify_termination_max_steps_when_reward_info_none():
-    from grounding_agent.runner import classify_termination
-    msgs = [{"role": "user", "content": "hi"}]
-    info = {"reward_info": None}
-    t = classify_termination(msgs, info, max_steps=25)
-    assert t["kind"] == "max_steps"
+def test_flatten_messages_assistant_without_tool_calls_uses_none():
+    """A talk-only assistant message gets tool_calls=None (OpenAI
+    convention) so our judges' `or []` defaulting works correctly."""
+    msgs = [_fake_assistant_msg("hello", tool_calls=[])]
+    out = _flatten_messages(msgs)
+    assert out[0]["tool_calls"] is None
+
+
+# ----- classify_termination --------------------------------------------------
+
+
+def _msgs_with_transfer():
+    return [{
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [{
+            "id": "x", "type": "function",
+            "function": {"name": "transfer_to_human_agents", "arguments": "{}"},
+        }],
+    }]
+
+
+def test_classify_termination_user_stop_is_completed():
+    t = classify_termination([], {"termination_reason": "user_stop"}, max_steps=25)
+    assert t["kind"] == "completed"
     assert t["transferred"] is False
 
 
-def test_classify_termination_transfer_when_transfer_tool_called_and_graded():
-    from grounding_agent.runner import classify_termination
-    msgs = [
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "x", "type": "function",
-             "function": {"name": "transfer_to_human_agents", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "x", "name": "transfer_to_human_agents",
-         "content": "Transfer successful"},
-    ]
-    info = {"reward_info": {"info": {"r_actions": 1.0}, "reward": 1.0}}
-    t = classify_termination(msgs, info, max_steps=25)
+def test_classify_termination_max_steps_maps_directly():
+    t = classify_termination([], {"termination_reason": "max_steps"}, max_steps=25)
+    assert t["kind"] == "max_steps"
+
+
+def test_classify_termination_timeout_treated_as_max_steps():
+    """timeout and context_window_exceeded are semantically the same
+    failure mode as max_steps for our taxonomy: the agent ran out of
+    budget before finishing."""
+    for raw in ("timeout", "context_window_exceeded"):
+        t = classify_termination([], {"termination_reason": raw}, max_steps=25)
+        assert t["kind"] == "max_steps", f"{raw} should map to max_steps"
+
+
+def test_classify_termination_errors_map_to_error():
+    for raw in (
+        "too_many_errors", "agent_error", "user_error",
+        "infrastructure_error", "unexpected_error",
+    ):
+        t = classify_termination([], {"termination_reason": raw}, max_steps=25)
+        assert t["kind"] == "error", f"{raw} should map to error"
+
+
+def test_classify_termination_transfer_overrides_completed():
+    """When the agent transferred AND env graded, the bucket is
+    'transfer' (it carries more information than 'completed')."""
+    t = classify_termination(
+        _msgs_with_transfer(),
+        {"termination_reason": "user_stop"},
+        max_steps=25,
+    )
     assert t["kind"] == "transfer"
     assert t["transferred"] is True
 
 
-def test_classify_termination_completed_when_graded_without_transfer():
-    from grounding_agent.runner import classify_termination
-    msgs = [
-        {"role": "user", "content": "hi"},
-        {"role": "assistant", "content": "ok done", "tool_calls": None},
-    ]
-    info = {"reward_info": {"info": {"r_actions": 0.0}, "reward": 0.0}}
-    t = classify_termination(msgs, info, max_steps=25)
-    assert t["kind"] == "completed"
-
-
-def test_classify_termination_max_steps_even_if_transferred_but_not_graded():
-    """If the agent transferred but reward_info is still None (rare but
-    possible if max_steps and transfer happened the same step), this is
-    surfaced as max_steps with transferred=True."""
-    from grounding_agent.runner import classify_termination
-    msgs = [
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "x", "type": "function",
-             "function": {"name": "transfer_to_human_agents", "arguments": "{}"}}
-        ]},
-    ]
-    info = {"reward_info": None}
-    t = classify_termination(msgs, info, max_steps=25)
-    assert t["kind"] == "max_steps"
+def test_classify_termination_transfer_does_not_override_error():
+    """If the agent transferred BUT env errored, the error bucket wins."""
+    t = classify_termination(
+        _msgs_with_transfer(),
+        {"termination_reason": "infrastructure_error"},
+        max_steps=25,
+    )
+    assert t["kind"] == "error"
     assert t["transferred"] is True
 
 
-def test_extract_tool_errors_returns_empty_for_clean_trajectory():
-    from grounding_agent.runner import extract_tool_errors
-    msgs = [
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "1", "type": "function",
-             "function": {"name": "get_user_details", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "1", "name": "get_user_details",
-         "content": '{"ok": true}'},
-    ]
-    assert extract_tool_errors(msgs) == []
+# ----- extract_tool_errors --------------------------------------------------
 
 
-def test_extract_tool_errors_attributes_error_to_calling_tool():
-    from grounding_agent.runner import extract_tool_errors
+def test_extract_tool_errors_uses_explicit_error_flag():
+    """τ³-bench's ToolMessage.error is the deterministic oracle —
+    no need to grep 'Error:' from content."""
     msgs = [
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "1", "type": "function",
-             "function": {"name": "book_reservation", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "1", "name": "book_reservation",
-         "content": "Error: payment amount does not add up"},
+        {
+            "role": "assistant", "content": None, "tool_calls": [
+                {"id": "c1", "type": "function",
+                 "function": {"name": "book_reservation", "arguments": "{}"}}
+            ],
+        },
+        {
+            "role": "tool", "tool_call_id": "c1", "name": "book_reservation",
+            "content": "Error: payment amount does not add up", "error": True,
+        },
     ]
     errs = extract_tool_errors(msgs)
     assert len(errs) == 1
     assert errs[0]["tool"] == "book_reservation"
     assert errs[0]["position"] == 0
-    assert "payment amount" in errs[0]["message"]
 
 
-def test_extract_tool_errors_handles_multiple_calls_in_order():
-    from grounding_agent.runner import extract_tool_errors
+def test_extract_tool_errors_ignores_successful_calls():
     msgs = [
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "1", "type": "function",
-             "function": {"name": "get_user_details", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "1", "name": "get_user_details",
-         "content": '{"ok": true}'},
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "2", "type": "function",
-             "function": {"name": "book_reservation", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "2", "name": "book_reservation",
-         "content": "Error: gift card balance is not enough"},
-        {"role": "assistant", "content": None, "tool_calls": [
-            {"id": "3", "type": "function",
-             "function": {"name": "book_reservation", "arguments": "{}"}}
-        ]},
-        {"role": "tool", "tool_call_id": "3", "name": "book_reservation",
-         "content": "Error: number of passengers does not match"},
+        {
+            "role": "assistant", "content": None, "tool_calls": [
+                {"id": "c1", "type": "function",
+                 "function": {"name": "get_user_details", "arguments": "{}"}}
+            ],
+        },
+        {
+            "role": "tool", "tool_call_id": "c1", "name": "get_user_details",
+            "content": '{"user_id": "u"}', "error": False,
+        },
     ]
-    errs = extract_tool_errors(msgs)
-    assert len(errs) == 2
-    assert [e["tool"] for e in errs] == ["book_reservation", "book_reservation"]
-    assert all(e["position"] > 0 for e in errs)
+    assert extract_tool_errors(msgs) == []
 
 
-def test_airline_tool_catalog_returns_fourteen_named_tools():
-    cat = runner.airline_tool_catalog()
+# ----- airline_tool_catalog (live tau2 import) -----------------------------
+
+
+def test_airline_tool_catalog_returns_named_tools():
+    """Live call into tau2. τ³-bench's airline domain has 15 tools
+    (one more than original τ-bench — get_flight_status was added)."""
+    cat = airline_tool_catalog()
     assert isinstance(cat, list)
-    assert len(cat) == 14
+    assert len(cat) >= 14  # at least the original tau-bench set
     names = {entry["name"] for entry in cat}
-    # Spot-check three of the tools listed in the policy + vendored README
-    assert "book_reservation" in names
-    assert "get_user_details" in names
-    assert "transfer_to_human_agents" in names
+    for required in ("book_reservation", "get_user_details",
+                     "transfer_to_human_agents", "cancel_reservation"):
+        assert required in names
+    # All entries have a non-empty description (τ³-bench fixed missing
+    # docs in the airline tools)
     for entry in cat:
         assert isinstance(entry["name"], str) and entry["name"]
         assert isinstance(entry["description"], str)

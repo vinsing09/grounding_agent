@@ -1,5 +1,27 @@
 {
-  "_comment": "tau-bench airline test-split task indices used by scripts/run_eval.py. 'train' = indices the eval was tuned on (smoke included 0+1). 'held_out' = indices the eval pipeline never saw during taxonomy/contract/judge design; the held-out comparison is the framework's generalization test.",
-  "train": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  "held_out": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  "_comment": "\u03c4\u00b3-bench airline task IDs. Uses the canonical 30-train/20-test split from sierra-research/tau2-bench's data/tau2/domains/airline/split_tasks.json. First 10 of each retained to match our prior train+held_out shape.",
+  "train": [
+    "0",
+    "1",
+    "3",
+    "4",
+    "5",
+    "7",
+    "9",
+    "10",
+    "11",
+    "12"
+  ],
+  "held_out": [
+    "2",
+    "6",
+    "8",
+    "13",
+    "16",
+    "18",
+    "19",
+    "22",
+    "24",
+    "25"
+  ]
 }

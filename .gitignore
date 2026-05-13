@@ -13,3 +13,4 @@ env/
 .DS_Store
 logs/
 *.log
+.gstack/

@@ -50,22 +50,43 @@ class ConfusionCell:
 
 def _iter_task_records(
     variant_data: dict[str, Any]
-) -> list[tuple[int, dict[str, Any]]]:
-    out: list[tuple[int, dict[str, Any]]] = []
+) -> list[tuple[int | str, dict[str, Any]]]:
+    """Yield (task_index, record) for non-errored tasks, sorted by
+    task index. task_index is int when the cache key parses as int
+    (τ-bench style), string otherwise (τ³-bench non-numeric ids)."""
+    out: list[tuple[int | str, dict[str, Any]]] = []
     for key, rec in (variant_data.get("tasks") or {}).items():
         if "error" in rec:
             continue
-        out.append((int(key), rec))
-    out.sort(key=lambda kv: kv[0])
+        try:
+            tk: int | str = int(key)
+        except (TypeError, ValueError):
+            tk = key
+        out.append((tk, rec))
+
+    def _sort_key(kv):
+        # int keys sort first, then strings lexically
+        if isinstance(kv[0], int):
+            return (0, kv[0])
+        return (1, kv[0])
+    out.sort(key=_sort_key)
     return out
 
 
 def split_of(
-    task_index: int, splits: dict[str, list[int]]
+    task_index: int | str, splits: dict[str, list[int | str]]
 ) -> str | None:
+    """Find which split a task belongs to.
+
+    τ³-bench uses string ids ("0", "1", "3", ...). The original τ-bench
+    used int indices. To accept both transparently, both sides of the
+    comparison are stringified.
+    """
+    needle = str(task_index)
     for name, ids in splits.items():
-        if task_index in ids:
-            return name
+        for x in ids:
+            if str(x) == needle:
+                return name
     return None
 
 
@@ -316,16 +337,17 @@ def reward_kind_breakdown(
 
 def termination_breakdown(
     variant_data: dict[str, Any],
-    splits: dict[str, list[int]],
+    splits: dict[str, list[int | str]],
 ) -> dict[str, dict[str, int]]:
     """{kind: {split: count}} for each termination_kind. Includes
-    errored tasks under the 'error' bucket."""
+    errored tasks under the 'error' bucket. Accepts either int or
+    string task ids (τ-bench / τ³-bench respectively)."""
     out: dict[str, dict[str, int]] = {}
     for tk_str, rec in (variant_data.get("tasks") or {}).items():
         try:
-            tk = int(tk_str)
-        except ValueError:
-            continue
+            tk: int | str = int(tk_str)
+        except (TypeError, ValueError):
+            tk = tk_str
         kind = termination_kind(rec)
         sp = split_of(tk, splits) or "unknown"
         for bucket in (sp, "all"):

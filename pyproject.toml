@@ -8,7 +8,11 @@ dependencies = [
     "anthropic>=0.34.0",
     "openai>=1.40.0",
     "python-dotenv>=1.0.0",
-    "tau_bench @ git+https://github.com/sierra-research/tau-bench.git",
+    # τ³-bench (March 2026). The repo is named tau2-bench but ships
+    # the current τ³-bench version with the airline-task fixes. The
+    # original τ-bench (sierra-research/tau-bench) is obsolete — see
+    # results/tau1_vs_tau3.md for the migration story.
+    "tau2 @ git+https://github.com/sierra-research/tau2-bench.git",
 ]
 
 [project.optional-dependencies]
