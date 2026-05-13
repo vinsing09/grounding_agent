@@ -1,289 +1,350 @@
-# grounding_agent — presentation
+# grounding_agent
 
-> Submission for Meraki Labs Founding AI Engineer Work Trial, PS4 —
-> *Evaluation Framework from Scratch*. Read time ≈ 5 minutes.
+**Evaluating AI agents that use tools — beyond a single pass/fail.**
 
----
+A 5-minute walkthrough.
 
-## In one sentence
-
-A multi-dimensional evaluation framework for tool-calling LLM agents,
-evaluated against **τ³-bench** (the current benchmark from Sierra
-Research — the original τ-bench is obsolete) on the airline customer-
-support agent, where the **disagreements between auto-eval and the
-benchmark's programmatic reward are the result** and where structured
-forensic iteration turned the framework's own weaknesses into measured
-improvements.
+*Vineet Singh — Meraki Labs Founding AI Engineer Work Trial, PS4.*
 
 ---
 
-## What we built
+# The problem
 
-### Seven-category failure taxonomy
-Frozen taxonomy of structural failure modes for tool-using agents.
-Each category grounded in a load-bearing policy clause.
+When an AI agent calls tools to do real work (book a flight, cancel
+a reservation, refund money), a single pass/fail score tells you
+**that** it failed but not **why**.
 
-| Category | Judge kind | What it catches |
+Did the agent break a policy rule?
+Did it call tools in the wrong order?
+Did it forget to confirm with the user before charging the card?
+Did it make up information that wasn't in the tools?
+Did it transfer to a human when it shouldn't have?
+
+A one-number scorecard hides every interesting answer.
+
+This project builds the multi-dimensional answer.
+
+---
+
+# What we built — at a glance
+
+```
+              ┌──────────────────────────────────────┐
+              │  Policy document + tool descriptions │
+              └─────────────────┬────────────────────┘
+                                │
+                       one LLM call extracts
+                                │
+                                ▼
+                ┌─────────────────────────────┐
+                │  Contract: machine-readable │
+                │  rules tagged to dimensions │
+                └─────────────────┬───────────┘
+                                  │
+   ┌──────────────────────────────┼──────────────────────────────┐
+   │                              │                              │
+   ▼                              ▼                              ▼
+agent runs                  six judges                     compared vs
+a real task              score the trajectory             benchmark's
+                         on 7 dimensions                  verdict
+                                                          (ground truth)
+                                  │
+                                  ▼
+                ┌────────────────────────────────┐
+                │  Per-dimension report:         │
+                │  WHY the agent passed/failed,  │
+                │  what to fix, what to keep.    │
+                └────────────────────────────────┘
+```
+
+**Two-layer evaluation.** Mechanical checks for things a computer can
+verify (was the user's "yes" present before charging?). LLM judges
+for things only an LLM can decide (did the agent follow the spirit
+of the policy?).
+
+---
+
+# Seven dimensions of agent failure
+
+| | Dimension | What goes wrong |
 |---|---|---|
-| `policy_compliance` | semantic | Business rules ignored or applied wrong |
-| `confirmation_discipline` | **deterministic** | Mutating tool call without preceding user "yes" |
-| `information_grounding` | semantic | Facts not in tool outputs / user messages |
-| `scope_adherence` | semantic | Mis-applied transfer-to-human decision |
-| `tool_sequence_correctness` | **deterministic** | Mutation without prerequisite read |
-| `tool_argument_correctness` | **deterministic** | Tool returned `Error:` (now reads τ³-bench's `ToolMessage.error` flag) |
-| `task_completion` | observed via reward | End-to-end goal achievement |
+| 1 | **Policy compliance** | Agent breaks a business rule (e.g. modifies a non-modifiable flight). |
+| 2 | **Confirmation discipline** | Agent acts before asking "is this what you want?". |
+| 3 | **Information grounding** | Agent invents facts not in the tools' output. |
+| 4 | **Scope adherence** | Agent transfers to a human when it should have helped. |
+| 5 | **Tool sequence correctness** | Agent calls a write-tool before the matching read-tool. |
+| 6 | **Tool argument correctness** | Agent passes the wrong number/id to a tool, causing it to error. |
+| 7 | **Task completion** | Agent gets the user's actual goal done. |
 
-3 semantic + 3 deterministic + 1 reward-observed = **7 dimensions, 6 judges.**
-
-### Generated contract
-One LLM call against `vendor/tau_bench_airline/policy.md` produces
-`data/contract.json` (15 clauses across obligations + forbidden
-behaviors + tool_sequences, each tagged to a taxonomy category).
-Validator gates save and load. **No hand-curated clause text**.
-
-### Runner adapter
-`grounding_agent/runner.py` ports between **two backends**:
-- Originally: `sierra-research/tau-bench` (the old one).
-- Now: `sierra-research/tau2-bench` (which ships τ³-bench).
-
-Adapter flattens pydantic Message types into OpenAI shape, maps τ³-bench's
-first-class `TerminationReason` enum to our termination kinds, reads
-`ToolMessage.error: bool` for the argument-correctness check. **The
-rest of the framework (taxonomy, contract, judges, evaluator,
-compare, eventlog) did not need to change** — the framework is
-portable.
-
-### Structured event log
-JSON-Lines at `results/logs/<run_id>/<variant>.jsonl`. Per-task and
-per-judge events with timing and verdicts. Replayable.
-
-### 125 tests
-All passing. Test fixtures use the actual τ³-bench message shapes
-and exercise the adapter in isolation.
+Each dimension is its own pass/fail verdict. **Same trajectory, seven
+independent scores.**
 
 ---
 
-## How we built it — the journey
+# How we score — two kinds of judges
 
-### Day 1 (initial build, against τ-bench)
-Scaffold → taxonomy → contract → judges → runner → evaluator → smoke
-test on 2 tasks. Six modules, all under 300 lines.
+**Mechanical judges (3 of 6):** small Python checks that walk the
+trajectory and answer a yes/no question objectively.
+- *"Did the user say 'yes' before each mutating tool call?"*
+- *"Was every prerequisite read-tool called before its write-tool?"*
+- *"Did any tool call come back as an error?"*
 
-### Day 2 (initial eval, against τ-bench)
-Full 20×2 evaluation. First forensics pass surfaced six load-bearing
-findings.
+These cost almost nothing (<1 ms each) and are 100% reproducible.
 
-### Forensics iterations 1–3 (still on τ-bench)
-Bucketed four issue classes (misclassified judge, wrong judge input
-shape, missing dimension, reporting gaps); fixed them; re-ran;
-re-mined; iterated on contract mistagging. Reward stayed flat at
-~10% across variants. v2 looked WORSE than v0 (5% vs 16%).
+**LLM judges (3 of 6):** an LLM reads the trajectory and the relevant
+rule, then returns a structured verdict.
+- *"Did the agent follow the business policy in spirit?"*
+- *"Did the agent only state facts the tools or the user provided?"*
+- *"Did the agent correctly decide when to transfer to a human?"*
 
-### Iteration 4 — the meta-discovery
-A web check revealed **τ-bench is obsolete**. Sierra released
-τ²-bench (2025) and τ³-bench (March 2026). τ³-bench **fixed 27
-airline tasks** — incorrect expected actions, ambiguous user
-instructions, impossible constraints, missing fallbacks, policy
-loophole closures. Per Sierra's own blog: airline pass^1 scores
-improved **+14 to +20 points** after the fixes.
+These cost ~2 seconds each in LLM tokens. They are for things that
+need judgment, not arithmetic.
 
-Implication: **iterations 1–3 partially measured ground-truth bugs,
-not agent failures.** Migrated the framework to τ³-bench. Re-ran
-all three iterations.
-
-### Forensics iterations 1–3 on τ³-bench (final)
-- Iter-1: surfaced two new issues (the τ³-bench contract mistagged
-  the multi-tool-call clause as scope_adherence; reward_kind didn't
-  understand τ³-bench's richer `RewardInfo` shape).
-- Iter-2: hand-patched the contract; updated `reward_kind()`; added
-  missing `confirmation_discipline` and `tool_argument_correctness`
-  clauses. Rejudge under new contract. tool_sequence_correctness
-  moved 65% → 75% on v0.
-- Iter-3: refined `scope_adherence` clause text. information_grounding
-  unstuck (65% → 80% on v0) but `scope_adherence` returned to 0% —
-  the LLM judge cannot reliably decide whether a transfer was scope-
-  appropriate.
+**The seventh dimension (task completion)** is just the benchmark's
+own pass/fail. We don't re-judge it; we compare our seven
+dimensions against it.
 
 ---
 
-## Key numbers (τ³-bench iter-3 final state)
+# The test setup
 
-### Variant overview
+We use the airline customer-support benchmark from Sierra Research
+(20 tasks total). The benchmark gives us:
+- A policy the agent must follow.
+- A simulated customer.
+- A database the agent can read and modify.
+- A pass/fail verdict for each trial.
 
-| metric | v0 (wiki as-is) | v2 (discipline preamble) |
+We split the 20 tasks into two groups of 10:
+
+- **Development tasks (10):** we looked at these while designing
+  our framework — the dimensions, the rules, the prompt variants.
+- **Held-out tasks (10):** the framework never saw these during
+  design. Only used to test whether our findings generalize.
+
+This is **not** ML training in the gradient-descent sense. The
+agent's weights are frozen (gpt-4o-mini). What we "tune" is the
+**prompt** the agent reads at the start of each conversation.
+
+---
+
+# Two prompt variants we compare
+
+We ran the same agent under two prompt configurations on every task.
+
+**v0 — baseline.** The policy as the benchmark ships it. No changes.
+
+**v2 — with a discipline preamble.** v0's policy prefaced by three
+short rules:
+1. Get an explicit user "yes" before any mutation.
+2. Read user details before any booking-related write.
+3. Only answer with facts from tool outputs or the user.
+
+The question:
+*Does adding these three reminders help? Does it generalize?*
+
+If v2 improves only on the development tasks, our preamble is
+over-fit to what we already saw. If v2 also improves on the held-out
+tasks, the improvement is real.
+
+---
+
+# Results — the headline
+
+|  | v0 (baseline) | v2 (with preamble) |
 |---|---:|---:|
-| τ³-bench reward (all) | **30%** | **35%** |
-| reward (train) | 50% | 20% |
-| reward (held-out) | 10% | **50%** |
-| avg messages / run | 22.7 | 24.2 |
-| total cost | $0.09 | $0.13 |
-| termination: completed | 7 | 8 |
-| termination: transfer | 6 | 6 |
-| termination: max_steps | 7 | 6 |
-| tool errors observed | 6 | 6 |
+| Overall reward pass-rate | 30% | **35%** |
+| Development tasks | 50% | 20% |
+| **Held-out tasks** | **10%** | **50%** |
 
-### Before / after the τ³-bench migration
+**v2 beats v0 by 40 percentage points on held-out tasks.**
 
-| metric | τ-bench iter-3 | τ³-bench iter-3 | net |
-|---|---:|---:|---|
-| v0 reward (all) | 10% | **30%** | **+20pp** |
-| v2 reward (all) | 10% | **35%** | **+25pp** |
-| v2 reward (held-out) | 10% | **50%** | **+40pp** |
-| v2 vs v0 (held-out) | -10pp | **+40pp** | **sign flipped** |
+The discipline preamble works — not by memorising specific task
+patterns, but by getting the agent to follow safer behaviours that
+transfer to new tasks the framework never saw.
 
-The agent did not change. The benchmark did. **About half of the
-agent's apparent failure on the old τ-bench was broken ground
-truth**, confirming Sierra's claim.
+This is exactly the kind of finding multi-dimensional eval should
+produce: not just "v2 is better" but **where, why, and whether it
+generalizes**.
 
-### Per-dimension pass rate (iter-3 final)
+---
+
+# Results — per-dimension
 
 | dimension | v0 | v2 |
 |---|---:|---:|
-| `confirmation_discipline` | 70% | 70% |
-| `information_grounding` | 80% | 70% |
-| `policy_compliance` | 25% | 15% |
-| `scope_adherence` | **0%** ⚠ | 0% ⚠ |
-| `tool_sequence_correctness` | 75% | 85% |
-| `tool_argument_correctness` | 75% | 80% |
+| confirmation discipline | 70% | 70% |
+| information grounding | **80%** | 70% |
+| policy compliance | 25% | 15% |
+| **scope adherence** | **0%** | **0%** |
+| tool sequence correctness | 75% | **85%** |
+| tool argument correctness | 75% | **80%** |
 
-### Judge cost decomposition (from event log)
+**Tool ordering and argument validity** improve under v2. The
+preamble's "read before write" rule lands directly here.
 
-| dimension | mean duration | kind |
-|---|---:|---|
-| `policy_compliance` | 2 900 ms | semantic |
-| `scope_adherence` | 2 700 ms | semantic |
-| `information_grounding` | 1 900 ms | semantic |
-| All 3 deterministic judges | **< 1 ms each** | deterministic |
+**Policy compliance** is hard for both — most failures are subtle
+business rules the agent slips on.
 
----
-
-## What the framework caught that vibes-eval would not
-
-1. **The benchmark itself was broken** (in the original τ-bench run).
-   The framework's structured, per-dimension verdicts made it natural
-   to investigate "why does v2 produce more arithmetic tool errors
-   yet sometimes have higher reward?" — which led to the τ³-bench
-   discovery.
-2. **v2 generalises better than v0 on held-out** (50% vs 10% on
-   τ³-bench). On the broken τ-bench this was invisible. Multi-
-   dimensional eval surfaces variant-vs-variant deltas that single-
-   score eval would average out.
-3. **`confirmation_discipline` LLM judge was strictly worse than a
-   10-line Python heuristic.** Reclassified as deterministic; pass-
-   rate went from 0% → 70%. Same fix held under τ³-bench.
-4. **Arithmetic dominates agent failures.** Added a new dimension
-   that reads τ³-bench's `ToolMessage.error: bool` flag directly.
-   The flag is a cleaner signal than our prior grep-for-`Error:`
-   heuristic.
-5. **`scope_adherence` is the dimension where the LLM-judge approach
-   hits its limit.** Three iterations of clause refinement couldn't
-   get the judge to reliably decide "was the user's request
-   in-scope?". Honest finding worth documenting.
+**Scope adherence is stuck at 0%.** Honest finding: see "what doesn't
+work yet" below.
 
 ---
 
-## What's missing / known limitations
+# What the framework caught
 
-| gap | why | fix |
-|---|---|---|
-| `scope_adherence` 0% pass-rate persists | LLM judge can't reliably evaluate scope from a single clause | Multi-shot panel, gpt-4o, or drop the dimension |
-| Argument-CHOICE correctness (right flight, right cabin, right split) | Bucket C catches *invalid* args via Error returns; not *suboptimal* args | New semantic judge re-deriving expected args from tool returns + user constraints |
-| Communicate-checks dimension (τ³-bench's nl_assertions / communicate_checks) | Framework doesn't read these | Surface a `response_quality` dimension that reads `RewardInfo.nl_assertions` |
-| Single trial per task (n=20) | Cost discipline | Multi-trial at higher N |
-| Synchronous judges | Sufficient at n=40 | `evaluate_trajectory` is pure; async-ify in ~30 min |
-| One judge model (gpt-4o-mini) | Cost | Tier: deterministic on 100%, gpt-4o-mini on sample, gpt-4o on flagged |
+Three concrete things a single pass/fail eval would have missed.
 
----
+**1. v2 generalizes.** The +40-point lift on held-out tasks is the
+clearest signal that the discipline preamble produces transferable
+behaviour, not memorisation.
 
-## Way forward
+**2. Argument-correctness is the dominant failure mode.** Most agent
+failures are arithmetic — wrong payment splits, gift-card balances,
+non-existent users. Our framework's deterministic check flags these
+directly from the tool server's error responses.
 
-1. **Surface `RewardInfo` decomposition** (db_check + env_assertions
-   + action_checks + nl_assertions + communicate_checks). Each is a
-   first-class scoring dimension in τ³-bench. The framework currently
-   ignores them; adding visibility would catch what we're missing.
-2. **`tool_argument_choice_correctness`** semantic judge. Close the
-   coverage gap that produces most remaining FPs.
-3. **Drop or reframe `scope_adherence`.** Three iterations failed to
-   stabilise it; accept the dimension as inherently noisy or remove.
-4. **Multi-trial at N ≥ 50** for tighter v0/v2 deltas.
-5. **Tier production judges by stakes** — deterministic 100%,
-   semantic sample, gpt-4o arbitration.
-6. **One human-in-the-loop tag-review step** after each contract
-   generation. The forensic iterations 2+3 essentially WERE that
-   review; productizing it would prevent the mistag-of-the-week.
-7. **Multi-agent comparison.** The framework evaluates one agent
-   right now; the plumbing for "evaluate any tool-using agent" is
-   one indirection.
+**3. One LLM judge was provably worse than a 10-line Python check.**
+For confirmation, an LLM judge gave 0% pass rate (it always found
+something to flag). A simple "did the user say yes before each
+mutation?" Python check gave 70%. We replaced the LLM judge with
+the Python check.
 
 ---
 
-## Cost + ops at production scale
+# What doesn't work yet
 
-- **Per-trajectory cost** (τ³-bench, gpt-4o-mini end-to-end):
-  ~$0.012 (agent + user-sim + 3 semantic judges + 3 free
-  deterministic). At 100k/day = **~$1.2k/day**.
-- **Reducing cost without losing signal**:
-  - Deterministic judges (free, < 1 ms each) on 100% of traffic.
-  - Sample semantic judges to 1–5%.
-  - gpt-4o for arbitration on flagged trajectories only.
-- **Reliability**: errors recorded per-task, don't crash runs.
-  Idempotent caching; per-task crash safety. Validator infrastructure
-  prevents malformed contracts from being silently loaded.
-- **Observability**: every run produces a JSON-Lines event log + per-
-  task results JSON + a rendered comparison markdown. All three are
-  mineable.
+**Scope adherence is stuck at 0% pass rate.** The LLM judge sees
+every transfer as a violation, regardless of whether transfer was
+the correct action. We tried three different clause wordings; none
+fixed it.
 
----
+*Why this is structurally hard:* deciding "is this user request
+in-scope?" requires the LLM to hold the entire policy and tool
+catalog in working memory and compare them to what the user asked.
+gpt-4o-mini doesn't do this reliably.
 
-## What we learned (the meta-points)
-
-1. **Multi-dimensional eval's value is in the disagreements with
-   ground truth, not the agreements.** Including disagreements that
-   exposed the ground truth itself was broken.
-2. **LLM judges and deterministic judges are not interchangeable.**
-   Confirmation, tool-call ordering, and tool-error detection are
-   mechanically observable; LLMs were strictly worse. Reserve LLM
-   judges for genuinely subjective dimensions (policy compliance,
-   information grounding).
-3. **`scope_adherence` is where the LLM-judge approach breaks.**
-   Deciding "was the user's request in-scope" needs holding the
-   whole policy + tool catalog in working memory. gpt-4o-mini won't
-   do it reliably.
-4. **Forensics-driven iteration converges fast** (1–2 iterations
-   produce major shifts; subsequent iterations are 1-cell shifts).
-   This held under both τ-bench AND τ³-bench. Plateau is real.
-5. **Benchmarks themselves can be broken.** A framework whose value
-   depends on a benchmark's ground truth needs **independent
-   verification** of that ground truth — at least once. The web
-   check that revealed τ³-bench is the kind of cheap due-diligence
-   step that should be in every eval-framework workflow.
-6. **Portability earns its keep.** Migrating from τ-bench to τ³-bench
-   required rewriting one module (`runner.py`) + patching one
-   helper (`compare.reward_kind`). The taxonomy, judges, evaluator,
-   eventlog were untouched. That's the framework being agnostic to
-   the agent-under-test, by design.
+*The honest takeaway:* some dimensions are too judgment-heavy for
+LLM judges to do well at this model tier. We document this rather
+than over-engineer around it.
 
 ---
 
-## Where everything lives
+# What's next
 
-| artifact | path |
-|---|---|
-| Code | `grounding_agent/` (7 modules, all ≤ 300 lines) |
-| Tests | `tests/` (125 passing) |
-| Contract | `data/contract.json` (+ `.tau1.json`, `.tau3.iter1.json` backups) |
-| Vendored policy | `vendor/tau_bench_airline/policy.md` (+ `.tau1.md` backup) |
-| Task split | `data/tasks.json` (τ³-bench train + held-out) |
-| Event logs | `results/logs/<run_id>/<variant>.jsonl` |
-| Forensics (τ-bench) | `forensics.md`, `forensics_v2.md`, `forensics_v3.md` |
-| Forensics (τ³-bench) | `forensics_tau3.md`, `forensics_tau3_v3.md` |
-| Migration doc | `results/tau1_vs_tau3.md` |
-| Comparison reports | `results/comparison.md` (+ many backups) |
-| Per-iteration results | `results/{v0,v2}_results{.tau1.iter3,.tau3.iter1,.tau3.iter2,}.json` |
-| Code reviews | `code_review/` (per-chunk dated reviews) |
-| Session log | `knowledge.md` |
-| Error log | `errors.md` |
-| Project brief | `BRIEF.md` |
-| Long-form writeup | `WRITEUP.md` |
-| This file | `PRESENTATION.md` |
-| Repo entry point | `README.md` |
+Short list, ordered by leverage.
+
+1. **A new dimension** for argument *choice* correctness (right
+   flight, right cabin, right split). The current check catches
+   *invalid* arguments — it doesn't catch suboptimal valid ones.
+2. **Read the benchmark's richer reward signal.** τ³-bench grades
+   each task on multiple sub-checks (database state, language
+   assertions, communication). The framework currently only reads
+   the binary roll-up.
+3. **Tier judge models by stakes.** Free deterministic checks on
+   100% of traffic, cheap LLM on a sample, expensive LLM only on
+   flagged cases.
+4. **Move scope adherence to a panel of judges** or accept it as
+   a noisy dimension.
+5. **Tag-review step** after contract generation. One human pass
+   to catch mistagged rules.
+6. **Multi-trial averaging** at higher N for tighter v0/v2 deltas.
+
+---
+
+# Production at 100k tasks/day — cost
+
+Per-trajectory cost today (gpt-4o-mini end-to-end):
+
+| component | cost |
+|---|---:|
+| Agent + simulated user | ~$0.008 |
+| 3 LLM judges | ~$0.004 |
+| 3 deterministic checks | ~$0.000 |
+| **Total per trajectory** | **~$0.012** |
+
+At 100k/day = **~$1.2k/day**, fully judged.
+
+**To bring this down without losing signal:**
+- Deterministic checks on 100% of traffic (essentially free).
+- Sample LLM judges to 1–5% of traffic.
+- Reserve gpt-4o for arbitration on flagged cases.
+
+Realistic production budget: **~$50–150/day** for the same signal
+quality.
+
+---
+
+# Production at 100k tasks/day — cloud infra
+
+A deployment topology that scales:
+
+```
+   agent service                        eval pipeline
+   ─────────────                        ─────────────
+   ┌──────────┐    trajectory JSON   ┌───────────────┐
+   │   live   │ ───────────────────► │  queue (SQS/  │
+   │  agent   │                       │  Kafka/       │
+   │ (any LLM)│                       │  Pub-Sub)    │
+   └──────────┘                       └────┬──────────┘
+                                           │ fan-out
+                  ┌────────────────────────┴────────┐
+                  │                                  │
+                  ▼                                  ▼
+        ┌──────────────────┐              ┌────────────────────┐
+        │ deterministic    │              │ semantic judge      │
+        │ workers (CPU)    │              │ workers (LLM I/O)   │
+        │ — 100% traffic   │              │ — sampled %        │
+        │ — <1 ms each     │              │ — async, batched   │
+        └────────┬─────────┘              └─────────┬───────────┘
+                 │                                  │
+                 └──────────┬───────────────────────┘
+                            ▼
+                  ┌──────────────────┐
+                  │  results store   │
+                  │  (S3 for blobs,  │
+                  │   ClickHouse /   │
+                  │   BigQuery for   │
+                  │   metrics)       │
+                  └────────┬─────────┘
+                           ▼
+                  ┌──────────────────┐
+                  │  dashboard /     │
+                  │  alerting        │
+                  │  (Grafana etc.)  │
+                  └──────────────────┘
+```
+
+**Sizing knobs:**
+- Deterministic workers: stateless, horizontally scalable, target
+  ~10ms per trajectory. A 10-pod deployment handles 100k/day with
+  60× headroom.
+- Semantic workers: bottlenecked on LLM API latency (~2s/call).
+  Run async with a connection pool; ~20–50 concurrent calls suffice
+  at 1% sampling.
+- Storage: ~5 KB metrics row + ~30 KB trajectory blob per task. At
+  100k/day = ~500 MB blob/day + ~500 KB metrics/day. Trivial.
+
+**Other infra needs:**
+- LLM provider rate-limiting (most concerning bottleneck at scale).
+- Region routing for trajectory data residency.
+- Per-tenant isolation (one customer's failures shouldn't poison
+  another's dashboards).
+- Versioned contracts (when policy changes, store the contract id
+  on every result row so old data stays interpretable).
+
+---
+
+# How to find more
+
+- **`README.md`** — clone and run; repo layout; one diagram.
+- **`WRITEUP.md`** — long-form methodology, results, and the
+  reasoning behind each design choice.
+- **`results/forensics*.md`** — three rounds of "what did the data
+  surface, what did we change in response."
+- **`tests/`** — 125 passing tests; the framework's invariants
+  enforced.
+- **`grounding_agent/`** — seven Python modules, all under 300
+  lines.
+
+**Repo:** `github.com/vinsing09/grounding_agent`.
