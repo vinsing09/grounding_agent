@@ -1,104 +1,152 @@
 # grounding_agent — project brief
 
-Resume here. This file is the cold-start context for any session.
+Cold-start context. Personal project; submission for Meraki Labs
+Founding AI Engineer Work Trial, Problem Statement 4 (Evaluation
+Framework from Scratch).
 
 ## Goal
 
-Build an evaluation framework that goes beyond vibe-checking, for the AI-powered task of **tool-calling LLM agents**. Submission for Meraki Labs Founding AI Engineer Work Trial, Problem Statement 4 (Evaluation Framework from Scratch). Two focused days.
+Build an evaluation framework for **tool-calling LLM agents** that
+goes beyond a single pass/fail score. The framework should explain
+*why* an agent failed across a small set of structurally-meaningful
+dimensions, and it should surface those reasons in a way a human
+reviewer can act on (fix the prompt, fix the policy, fix the agent).
 
 ## Approach in one paragraph
 
-A handcrafted failure taxonomy (six behavioral failure categories) defines the dimensions on which agents are evaluated. For each agent under test, a contract is generated from its policy + tools (obligations, forbidden behaviors, tool sequences), every contract clause tagged to a taxonomy category. Semantic LLM judges score each trajectory along the taxonomy dimensions; a deterministic checker scores tool-sequence correctness. The framework is evaluated against the τ-bench customer-support agent across 20 tasks (10 training-distribution, 10 held-out). τ-bench's programmatic reward serves as ground truth; the multi-dimensional automated eval is compared against it, and the disagreements are the failure analysis.
+A seven-category failure taxonomy defines the dimensions on which
+agents are evaluated. For each agent under test, a contract is
+generated from its policy and tool catalog (one LLM call → JSON of
+obligations + forbidden behaviors + tool sequences, each clause
+tagged to a taxonomy category). Six judges — three semantic LLM
+judges, three deterministic Python checks — score every trajectory
+along the seven dimensions. The framework is evaluated against the
+[τ³-bench](https://github.com/sierra-research/tau2-bench) airline
+customer-support agent across 20 tasks (10 development + 10
+held-out). τ³-bench's programmatic reward is the ground truth; the
+framework's per-dimension verdicts are compared against it, and the
+disagreements are the failure analysis.
 
 ## Why this approach
 
-- **The taxonomy is the load-bearing decision.** It constrains what dimensions exist, what the contract structure looks like, and what each judge prompt asks. Generic LLM-as-judge picks dimensions arbitrarily; ours is grounded in the structural failure modes of tool-using agents.
-- **Deterministic + semantic, not just semantic.** Tool-sequence checks are cheap and reliable as code; reserve LLM judges for things only LLMs can decide.
-- **External ground truth, not self-labeling.** τ-bench's reward function is programmatic, reproducible, and authored by independent researchers — removes the candidate-marks-own-homework problem.
-- **Held-out is the killer dimension.** Most eval frameworks measure on the distribution the system was tuned on. The held-out slice (τ-bench tasks 10–19) tests whether eval scores reflect generalization or overfit.
+- **The taxonomy is the load-bearing decision.** It constrains what
+  dimensions exist, what the contract structure looks like, and what
+  each judge prompt asks. Generic LLM-as-judge picks dimensions
+  arbitrarily; ours is grounded in the structural failure modes of
+  tool-using agents.
+- **Deterministic + semantic, not just semantic.** Tool-call ordering,
+  argument validity, and per-mutation confirmation are mechanically
+  observable; Python checks are cheaper, faster, and more reliable
+  than LLM judges for those. LLM judges are reserved for genuinely
+  subjective dimensions (policy spirit, scope decisions, factual
+  grounding).
+- **External ground truth.** τ³-bench's reward function is
+  programmatic and authored by independent researchers — removes the
+  candidate-marks-own-homework problem.
+- **Held-out is the key signal.** Most eval frameworks measure on
+  the distribution the system was tuned on. The held-out slice tests
+  whether per-dimension scores reflect generalization or fit-to-the-
+  pilot.
 
 ## Agent under test
 
-τ-bench customer-support (airline domain). Vendored under `vendor/tau_bench/` with attribution. Policy, tools, tasks, and reward function loaded from there.
+τ³-bench customer-support (airline domain). Loaded via the
+`tau2` Python package from
+[sierra-research/tau2-bench](https://github.com/sierra-research/tau2-bench)
+(which hosts the τ³-bench release). Policy text mirrored at
+`vendor/tau_bench_airline/policy.md`.
 
-## Two-day plan
+## What's in scope
 
-**Day 1 — build the eval pipeline**
-1. `taxonomy.py` — six failure categories, each with a description, example trajectory, and judge dimension name.
-2. `contract.py` — given policy.md + tools, one LLM call produces obligations + forbidden behaviors + tool_sequences, each tagged to a taxonomy category. Output committed as JSON.
-3. `judges.py` — four semantic judges (one per applicable taxonomy category) + one deterministic tool-sequence checker. Each judge returns `{passed, reason, category}`.
-4. `runner.py` — drives an agent through a τ-bench task, captures trajectory.
-5. `evaluator.py` — applies judges to a trajectory, produces per-dimension verdicts.
-6. Smoke-test on 2 tasks end-to-end before scaling.
+1. `taxonomy.py` — seven failure categories with descriptions,
+   examples, judge-kind metadata.
+2. `contract.py` — one-LLM-call generator + validator + io for
+   `data/contract.json`.
+3. `judges.py` — three semantic judges + three deterministic
+   checks; uniform signature; `JudgeResult` with optional continuous
+   `score` field.
+4. `runner.py` — drives the τ³-bench agent through one task,
+   captures trajectory + termination + tool errors.
+5. `evaluator.py` — applies all judges, returns per-category
+   verdicts.
+6. `compare.py` — confusion matrices, per-clause citation counts,
+   disagreement examples, reward-kind decomposition.
+7. `eventlog.py` — JSON-Lines event log for forensic replay.
 
-**Day 2 — run, compare, write**
-1. Run agent v0 against all 20 tasks (10 train + 10 held-out).
-2. Run an alternative prompt variant v2 (sourced and documented in WRITEUP) against same 20.
-3. `compare.py` — per-dimension auto-eval vs τ-bench reward. Confusion matrix + disagreement examples.
-4. Write `WRITEUP.md`: dimensions + justification, methodology, results, failure analysis with held-out angle, production-readiness at 100k users/day, what we chose not to build.
-5. Polish `README.md`: clone-and-run path verified from a clean checkout.
+## What's out of scope
 
-## Target layout
+- Auto-generated test cases. τ³-bench provides 50; we use 20.
+- Hand-labeled rubrics. Reward function is the ground truth.
+- Optimization loops (audit/refine/synth). PS4 is eval, not
+  improvement.
+- A generic eval framework that handles any agent. Scoped to
+  tool-calling agents with explicit goals and a written policy.
+- More than seven taxonomy categories.
+
+## Target layout (final)
 
 ```
 grounding_agent/
-├── README.md                          # public-facing, clone-and-run
-├── WRITEUP.md                         # PS4 thinking artifact
+├── README.md
+├── WRITEUP.md
 ├── BRIEF.md                           # this file
-├── knowledge.md                       # chronological session log
-├── errors.md                          # chronological error log
-├── code_review/                       # per-implementation review docs
-├── LICENSE
+├── PRESENTATION.md / PRESENTATION.pdf
+├── knowledge.md, errors.md            # chronological logs
+├── code_review/                       # per-implementation reviews
 ├── pyproject.toml
-├── .env.example
-├── grounding_agent/
-│   ├── __init__.py
+├── grounding_agent/                   # 7 modules, all ≤ 300 lines
 │   ├── taxonomy.py
 │   ├── contract.py
 │   ├── judges.py
-│   ├── runner.py
+│   ├── runner.py                      # tau2-bench (τ³-bench) port
 │   ├── evaluator.py
-│   └── compare.py
-├── vendor/tau_bench/                  # policy.md + tools + tasks + reward, attributed
+│   ├── compare.py
+│   └── eventlog.py
+├── vendor/tau_bench_airline/          # mirrored policy.md, license
 ├── data/
-│   ├── tasks.json                     # 20-task subset (10 train + 10 held-out)
-│   └── contract.json                  # generated by scripts/generate_contract.py
+│   ├── contract.json                  # generated
+│   ├── tasks.json                     # τ³-bench's canonical split (10 + 10)
+│   └── variants/v2_preamble.md
 ├── scripts/
 │   ├── generate_contract.py
-│   ├── run_eval.py
+│   ├── smoke_test.py
+│   ├── run_eval.py                    # supports --judge-only
 │   └── compare_to_reward.py
-├── results/
-│   ├── v0_results.json
-│   ├── v2_results.json
-│   └── comparison.md
-└── tests/
-    ├── test_taxonomy.py
-    ├── test_contract.py
-    ├── test_judges.py
-    └── test_evaluator.py
+├── results/                           # comparison.md, forensics_*.md,
+│                                      # eventlog under results/logs/<run_id>/
+└── tests/                             # 125 passing tests
 ```
 
 ## Strict rules
 
-- Each Python module ≤300 lines; up to 500 only with explicit justification recorded in `code_review/`.
-- Tests for every module. Tests must exercise realistic input shape — actual τ-bench trajectories where possible — not synthetic happy paths.
-- Comments only when a non-obvious WHY needs preserving. No what-this-does commentary.
-- knowledge.md and errors.md updated chronologically every session.
-- After each implementation chunk, write a short review in `code_review/` (file per dated chunk).
-- No over-engineering. If a dimension or judge isn't paying off, cut it. The taxonomy trim is itself a "what I chose not to build" bullet.
+- Each Python module ≤ 300 lines.
+- Tests for every module. Test fixtures use real τ³-bench message
+  shapes, not toy data.
+- Comments only when a non-obvious WHY needs preserving.
+- `knowledge.md` and `errors.md` updated chronologically every
+  session.
+- After each implementation chunk, write a short review in
+  `code_review/`.
+- No over-engineering. Cut dimensions or judges that aren't paying
+  off.
 
-## Deliberately not building
-
-- Auto-generated test cases. τ-bench provides 20; we use them.
-- Hand-labeling rubric. τ-bench's reward is reproducible programmatic ground truth.
-- Optimization (audit / refine / synth). PS4 is eval, not improvement.
-- A generic eval framework. Scoped to tool-calling agents with explicit goals.
-- More than six taxonomy categories. Six well-justified dimensions beats eleven shallow ones.
-
-## What "done" looks like at end of Day 2
+## What "done" looks like
 
 - `pytest` passes from a clean checkout.
-- `python scripts/run_eval.py` reproduces both v0 and v2 results from cache or re-runs them.
-- `results/comparison.md` shows per-dimension confusion matrices vs τ-bench reward, with disagreement examples.
-- `WRITEUP.md` reads cleanly in 15 minutes and answers all four PS4 deliverables.
-- Repo clones, installs, and runs without manual intervention beyond `.env` setup.
+- `scripts/run_eval.py` reproduces v0 and v2 results from cache or
+  re-runs them.
+- `results/comparison.md` shows per-dimension confusion matrices vs
+  τ³-bench reward, with disagreement examples.
+- `WRITEUP.md` reads cleanly in 15 minutes and answers the PS4
+  deliverables.
+- `PRESENTATION.pdf` is the 5-minute walkthrough.
+- Repo clones and runs without manual intervention beyond `.env`
+  setup.
+
+## Status
+
+All scope items shipped. Three forensic iterations recorded under
+the original τ-bench; the framework was then migrated to τ³-bench
+and another three forensic iterations performed under the corrected
+benchmark. Final results in `results/comparison.md` and
+`results/forensics_tau3_v3.md`.

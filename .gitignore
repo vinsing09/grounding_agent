@@ -14,3 +14,6 @@ env/
 logs/
 *.log
 .gstack/
+
+# Local-only Claude Code project memory; not part of the public repo.
+CLAUDE.md

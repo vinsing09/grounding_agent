@@ -9,16 +9,21 @@ An evaluation framework for **tool-calling LLM agents** that produces
 per-dimension, structurally-grounded verdicts on every trajectory —
 not a single vibe-check score.
 
-The framework is evaluated against the [τ-bench](https://github.com/sierra-research/tau-bench)
-customer-support agent in the airline domain. τ-bench's programmatic
-reward function is the ground truth; the framework's multi-dimensional
-auto-eval is compared against it across 20 tasks (10 training-
-distribution + 10 held-out) under two prompt variants. The
-disagreements between auto-eval and reward are the failure analysis.
+The framework is evaluated against the [τ³-bench](https://github.com/sierra-research/tau2-bench)
+airline customer-support agent (the current Sierra Research
+benchmark; the repo name is `tau2-bench` but the release is τ³-bench
+with airline-task fixes shipped March 2026). τ³-bench's programmatic
+reward function is the ground truth; the framework's per-dimension
+auto-eval is compared against it across 20 tasks (10 development +
+10 held-out) under two prompt variants. The disagreements between
+auto-eval and reward are the failure analysis.
 
-**Three iterations on the framework** were performed forensically:
-each iteration's findings were bucketed, fixes implemented, and
-the results re-mined. Full history in `results/forensics{,_v2,_v3}.md`.
+**Six forensic iterations** were performed: three under the original
+τ-bench (2024), then a migration to τ³-bench, then three more
+iterations under the corrected benchmark. Each iteration's findings
+were bucketed, fixes implemented, and the results re-mined. History
+in `results/forensics*.md`. The migration story is in
+`results/tau1_vs_tau3.md`.
 
 ## How it works (one diagram)
 
@@ -44,10 +49,10 @@ the results re-mined. Full history in `results/forensics{,_v2,_v3}.md`.
                       │   {passed, reason, score,      │
                       │    clause_refs}                │
                       ▼                                ▼
-       runner.py drives tau-bench agent (captures trajectory +
+       runner.py drives the τ³-bench agent (captures trajectory +
        termination kind + tool errors) → evaluator.py applies all
-       six judges → compare.py contrasts verdicts vs tau-bench's
-       binary reward → JSON-Lines event log replayable for forensics.
+       six judges → compare.py contrasts verdicts vs τ³-bench's
+       reward → JSON-Lines event log replayable for forensics.
 ```
 
 A **7-category failure taxonomy** is the load-bearing decision. The
@@ -72,33 +77,32 @@ validator gates save and load.
   `tool_argument_correctness` (tool-server `Error: …` responses).
 
 The 7th category, `task_completion`, is intentionally **not** judged
-— τ-bench's programmatic reward already measures it; a separate LLM
+— τ³-bench's programmatic reward already measures it; a separate LLM
 judge would conflate evaluator noise with ground truth. Observed via
 `compare.py`.
 
-## Headline results (final iteration)
+## Headline results (final iteration, τ³-bench)
 
-- v0 reward 10% (2/20). v2 reward 10% (2/20).
-- v2 had **2× the booking attempts** of v0 (39 vs 13 `book_reservation`
-  calls) and **34 tool-side errors** vs v0's 16. The "execution
-  discipline" preamble in v2 made the agent more action-oriented,
-  not more cautious.
+- **v0 reward 30%** (6/20). **v2 reward 35%** (7/20).
+- **v2 held-out tasks: 50%** vs v0's 10%. The discipline preamble's
+  improvement generalizes from development to held-out tasks.
 - **`confirmation_discipline`** moved from 0% pass-rate under an LLM
-  judge to 65% pass-rate as a deterministic check (Bucket A).
-- **Task 15** (refuse-and-transfer, the canonical Bucket B test case):
-  went from 0/5 PASS in iter-1 to 6/6 PASS in iter-2 because
-  semantic judges no longer anchor on user requests.
-- Most-cited mistagged clause (`fb-modify-basic-economy`) dropped
-  9 → 5 citations after iter-3 contract regeneration. Reaching zero
-  needs a human-in-the-loop tag review.
+  judge to 70% pass-rate as a deterministic Python check.
+- **`tool_argument_correctness`** reads τ³-bench's
+  `ToolMessage.error: bool` flag directly — every payment-arithmetic
+  failure is caught.
+- **`scope_adherence` is structurally stuck at 0%.** The LLM judge
+  cannot reliably decide whether a user's request was in-scope.
+  Documented as a known LLM-judge limit rather than over-engineered
+  around.
 
-Full numbers in `results/comparison.md` and the per-iteration
-forensics docs.
+Full numbers in `results/comparison.md` and the τ³-bench forensics
+docs (`results/forensics_tau3.md`, `results/forensics_tau3_v3.md`).
 
 ## What's deliberately not built
 
-- Auto-generated test cases. τ-bench provides 20; we use them.
-- Hand-labeling rubric. τ-bench's reward is reproducible programmatic ground truth.
+- Auto-generated test cases. τ³-bench provides 50; we use 20.
+- Hand-labeling rubric. The benchmark's reward is the ground truth.
 - Optimization (audit / refine / synth). PS4 is eval, not improvement.
 - A generic eval framework. Scoped to tool-calling agents with explicit goals.
 - More than seven taxonomy categories.
@@ -135,7 +139,7 @@ python scripts/run_eval.py                  # writes results/{v0,v2}_results.jso
 # (4a) optional: re-judge cached trajectories under a fresh contract
 python scripts/run_eval.py --judge-only
 
-# (5) auto-eval vs τ-bench reward, with disagreement examples
+# (5) auto-eval vs τ³-bench reward, with disagreement examples
 python scripts/compare_to_reward.py         # writes results/comparison.md
 ```
 
@@ -160,7 +164,7 @@ grounding_agent/
 │   ├── taxonomy.py                   # 7 FailureCategory dataclasses
 │   ├── contract.py                   # validator + LLM generator + io
 │   ├── judges.py                     # 3 semantic + 3 deterministic
-│   ├── runner.py                     # drives tau-bench; termination
+│   ├── runner.py                     # drives τ³-bench; termination
 │   │                                 # classification; tool-error extraction
 │   ├── evaluator.py                  # applies judges to trajectory
 │   ├── compare.py                    # confusion / clause counts /
@@ -220,16 +224,21 @@ makes per-event timing and verdicts replayable.
 
 ## Attribution
 
-τ-bench (`tau_bench` on PyPI / [GitHub](https://github.com/sierra-research/tau-bench))
-is the work of Sierra Research, released under the MIT License. The
-policy text in `vendor/tau_bench_airline/policy.md` and the test tasks
-loaded via the pip dependency are unmodified excerpts of that project.
+τ³-bench is the work of Sierra Research, released under the MIT
+License. It is distributed from
+[github.com/sierra-research/tau2-bench](https://github.com/sierra-research/tau2-bench)
+(the repository name retains "tau2" while the current release is
+τ³-bench, March 2026, with 27 airline-task fixes). The policy text
+mirrored in `vendor/tau_bench_airline/policy.md` and the test tasks
+loaded via the `tau2` Python package are unmodified excerpts of
+that project.
 
 Citation: Yao et al., 2024. *τ-bench: A Benchmark for Tool-Agent-User
-Interaction in Real-World Domains.*
+Interaction in Real-World Domains.* See also Sierra's τ³-bench
+release notes for the airline-task corrections.
 
-`grounding_agent` is independent work that uses τ-bench as the
-system-under-test and ground-truth source.
+`grounding_agent` is independent personal work that uses τ³-bench
+as the system-under-test and ground-truth source.
 
 ## License
 
