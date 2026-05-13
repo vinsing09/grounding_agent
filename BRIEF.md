@@ -94,14 +94,18 @@ grounding_agent/
 ├── knowledge.md, errors.md            # chronological logs
 ├── code_review/                       # per-implementation reviews
 ├── pyproject.toml
-├── grounding_agent/                   # 7 modules, all ≤ 300 lines
-│   ├── taxonomy.py
-│   ├── contract.py
-│   ├── judges.py
-│   ├── runner.py                      # tau2-bench (τ³-bench) port
-│   ├── evaluator.py
-│   ├── compare.py
-│   └── eventlog.py
+├── grounding_agent/
+│   ├── taxonomy.py                    # 179 lines
+│   ├── contract.py                    # 265 lines
+│   ├── judges/                        # package: 4 files, each ≤ 233 lines
+│   │   ├── __init__.py                # public surface + ALL_JUDGES tuple
+│   │   ├── _common.py                 # JudgeResult, helpers
+│   │   ├── _deterministic.py          # 3 deterministic checks
+│   │   └── _semantic.py               # 3 LLM judges + prompt builder
+│   ├── runner.py                      # τ³-bench port; 338 lines (see code_review/)
+│   ├── evaluator.py                   # 69 lines
+│   ├── compare.py                     # 398 lines (see code_review/)
+│   └── eventlog.py                    # 103 lines
 ├── vendor/tau_bench_airline/          # mirrored policy.md, license
 ├── data/
 │   ├── contract.json                  # generated

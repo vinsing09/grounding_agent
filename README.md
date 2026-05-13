@@ -83,9 +83,11 @@ judge would conflate evaluator noise with ground truth. Observed via
 
 ## Headline results (final iteration, τ³-bench)
 
-- **v0 reward 30%** (6/20). **v2 reward 35%** (7/20).
-- **v2 held-out tasks: 50%** vs v0's 10%. The discipline preamble's
-  improvement generalizes from development to held-out tasks.
+- **v0 reward 30%** (6/20). **v2 reward 35%** (7/20). Overall is
+  roughly tied at n=20.
+- **Distribution shift**: v0 passes 5 of 10 dev tasks and 1 of 10
+  held-out; v2 passes 2 of 10 dev and 5 of 10 held-out. v2 trades
+  development-task wins for held-out wins.
 - **`confirmation_discipline`** moved from 0% pass-rate under an LLM
   judge to 70% pass-rate as a deterministic Python check.
 - **`tool_argument_correctness`** reads τ³-bench's
@@ -95,6 +97,10 @@ judge would conflate evaluator noise with ground truth. Observed via
   cannot reliably decide whether a user's request was in-scope.
   Documented as a known LLM-judge limit rather than over-engineered
   around.
+- **Coverage finding**: the 6 dimensions don't fully explain the
+  reward shift on held-out tasks. The framework surfaces this
+  honestly — see `WRITEUP.md` §3.4 and
+  `code_review/2026-05-13-results-audit.md`.
 
 Full numbers in `results/comparison.md` and the τ³-bench forensics
 docs (`results/forensics_tau3.md`, `results/forensics_tau3_v3.md`).
@@ -163,7 +169,11 @@ grounding_agent/
 ├── grounding_agent/
 │   ├── taxonomy.py                   # 7 FailureCategory dataclasses
 │   ├── contract.py                   # validator + LLM generator + io
-│   ├── judges.py                     # 3 semantic + 3 deterministic
+│   ├── judges/                       # package: 3 semantic + 3 deterministic
+│   │   ├── __init__.py               # public surface + ALL_JUDGES
+│   │   ├── _common.py                # JudgeResult, trajectory helpers
+│   │   ├── _deterministic.py         # confirmation / tool_seq / tool_arg
+│   │   └── _semantic.py              # policy / info / scope + prompt
 │   ├── runner.py                     # drives τ³-bench; termination
 │   │                                 # classification; tool-error extraction
 │   ├── evaluator.py                  # applies judges to trajectory
