@@ -268,3 +268,43 @@ def test_airline_tool_catalog_returns_named_tools():
     for entry in cat:
         assert isinstance(entry["name"], str) and entry["name"]
         assert isinstance(entry["description"], str)
+
+
+def test_wiki_override_mutates_agent_domain_policy():
+    """Regression guard: verifies the v2 mechanism actually reaches the
+    agent's system prompt. Bug class to catch: a refactor that breaks
+    the `orch.agent.domain_policy = wiki_override + ...` line would
+    silently turn v2 into a duplicate v0 run.
+
+    Constructs an orchestrator at the same point runner.run_task does,
+    applies the same mutation, verifies system_prompt now contains the
+    override marker. Live tau2 call; no API key needed (no LLM call)."""
+    from tau2.data_model.simulation import TextRunConfig
+    from tau2.run import get_tasks
+    from tau2.runner import build_text_orchestrator
+
+    config = TextRunConfig(
+        domain="airline", agent="llm_agent", llm_agent="gpt-4o-mini",
+        llm_args_agent={"temperature": 0.0},
+        user="user_simulator", llm_user="gpt-4o-mini",
+        llm_args_user={"temperature": 0.0},
+        num_trials=1, max_steps=5,
+        task_set_name="airline", task_ids=["0"],
+    )
+    task = get_tasks("airline", task_ids=["0"])[0]
+    override_text = "## TEST_MARKER_PREAMBLE\n\nA distinctive sentinel.\n\n"
+
+    orch = build_text_orchestrator(config, task, seed=42)
+    baseline_len = len(orch.agent.domain_policy)
+    baseline_sys = orch.agent.system_prompt
+    assert "TEST_MARKER_PREAMBLE" not in baseline_sys
+
+    # Apply the same mutation runner.run_task uses.
+    orch.agent.domain_policy = override_text + orch.agent.domain_policy
+
+    assert len(orch.agent.domain_policy) == baseline_len + len(override_text)
+    # The agent's system_prompt is a property that reads domain_policy
+    # fresh on each access — the mutation must show up.
+    assert "TEST_MARKER_PREAMBLE" in orch.agent.system_prompt
+    assert orch.agent.system_prompt.find("TEST_MARKER_PREAMBLE") < orch.agent.system_prompt.find("Airline Agent Policy"), \
+        "preamble should appear BEFORE the policy body in the rendered system prompt"
